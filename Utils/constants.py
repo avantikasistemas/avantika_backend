@@ -1,0 +1,19 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv() # Carga las variables desde el archivo .env
+
+# Accesos
+MICROSOFT_CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
+MICROSOFT_CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
+MICROSOFT_TENANT_ID = os.getenv("MICROSOFT_TENANT_ID")
+MICROSOFT_API_SCOPE = ['https://graph.microsoft.com/.default']
+
+# URLs
+MICROSOFT_URL = os.getenv("MICROSOFT_URL")
+MICROSOFT_URL_GRAPH = os.getenv("MICROSOFT_URL_GRAPH")
+
+# 
+PARENT_FOLDER=os.getenv("PARENT_FOLDER")
+TARGET_FOLDER=os.getenv("TARGET_FOLDER")
+EMAIL_USER=os.getenv("EMAIL_USER")

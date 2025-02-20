@@ -26,7 +26,6 @@ connect_url = sqlalchemy.engine.url.URL(
     query={
         "driver": driver, 
         "TrustServerCertificate": trusted_connection,
-        "encrypt": encrypt,
     }
 )
 
