@@ -1,4 +1,5 @@
 import os
+from datetime import time
 from dotenv import load_dotenv
 
 load_dotenv() # Carga las variables desde el archivo .env
@@ -13,7 +14,11 @@ MICROSOFT_API_SCOPE = ['https://graph.microsoft.com/.default']
 MICROSOFT_URL = os.getenv("MICROSOFT_URL")
 MICROSOFT_URL_GRAPH = os.getenv("MICROSOFT_URL_GRAPH")
 
-# 
+# Datos correo
 PARENT_FOLDER=os.getenv("PARENT_FOLDER")
 TARGET_FOLDER=os.getenv("TARGET_FOLDER")
 EMAIL_USER=os.getenv("EMAIL_USER")
+
+# Horario laboral
+START_WORK_HOUR = time(7, 30)
+END_WORK_HOUR = time(17, 30)

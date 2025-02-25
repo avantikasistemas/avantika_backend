@@ -1,14 +1,9 @@
-import requests
 from Utils.tools import Tools, CustomException
 from Utils.querys import Querys
-# from Models.client_model import ClientModel
-# from Models.client_lines_model import ClientLinesModel
-# from Models.client_user_model import ClientUserModel
-
+from datetime import datetime, timedelta, timezone
+import pytz
 from Utils.constants import (
-    MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, MICROSOFT_TENANT_ID, 
-    MICROSOFT_API_SCOPE, MICROSOFT_URL, MICROSOFT_URL_GRAPH, PARENT_FOLDER,
-    TARGET_FOLDER, EMAIL_USER
+    START_WORK_HOUR, END_WORK_HOUR
 )
 
 class Cotizacion:
@@ -16,145 +11,374 @@ class Cotizacion:
     def __init__(self):
         self.tools = Tools()
         self.querys = Querys()
-        self.token = self._get_access_token()
+        self.holidays = {
+            "2025-03-03", "2025-03-04",
+            "2025-03-24", "2025-04-17", "2025-04-18", "2025-05-01", 
+            "2025-06-02", "2025-06-23", "2025-06-30", "2025-07-20", 
+            "2025-08-07", "2025-08-18", "2025-10-13", "2025-11-03", 
+            "2025-11-17", "2025-12-08", "2025-12-25"
+        }
 
-    def get_emails(self, data: dict):
-        """ Api interna donde realizaremos la lógica para extracción de los correos. """
-
-        # Inicializamos 2 listas vacias
-        emails = list()
-        response = list()
+    def get_tercero_x_nit(self, data: dict):
+        """ Api que realiza la consulta del tercero a la base de datos. """
 
         # Asignamos nuestros datos de entrada a sus respectivas variables
-        start_date = data["start_date"]
-        end_date = data["end_date"]
-
-        # Formateamos las fechas a un formato valido si existen
-        if start_date:
-            start_date = self.tools.format_date(start_date)
-        if end_date:    
-            end_date = self.tools.format_date(end_date)
+        nit = data["nit"].strip()
+        fecha = data.get("fecha", None)
 
         try:
-            # llamamos a la funcion extract emails para extraer los correos desde la api externa
-            emails = self.extract_emails(start_date, end_date)
+            # Acá usamos la query para traer la información
+            datos = self.querys.get_tercero_x_nit(nit)
 
-            # Ordenar correos de más reciente a más antiguo antes de añadirlos a la tabla
-            emails.sort(key=lambda x: x['receivedDateTime'], reverse=True)
-            print(f"Correos extraídos: {len(emails)}")
+            # Calculamos fecha de vencimiento
+            fecha_venc = self.calculate_expiry_date(datos, fecha)
 
-            # Filtramos los correos evitando enviar los de spam
-            filtered_emails = [
-                email for email in emails
-                if not email['from']['emailAddress']['address'].lower().startswith(('postmaster', 'noreply'))
-                and not email['subject'].startswith(('[!!Spam]', '[!!Massmail]'))
-            ]
+            # Agregamos la fecha al json de salida
+            datos.update({"fecha_vencimiento": fecha_venc})
 
-            # Ordenamos por fecha de la actual a la antigua
-            filtered_emails.sort(key=lambda x: x['receivedDateTime'], reverse=True)
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", datos)
 
-            # Recorremos los correos para realizar el formato de respuesta
-            if emails: 
-                for i, email in enumerate(emails):
-                    # Asignamos los datos de correo a variables
-                    sender = email['from']['emailAddress']['address']
-                    subject = email['subject']
-                    received_time_iso = email['receivedDateTime']
-                    # Formateamos la fecha
-                    received_time = self.tools.format_datetime(received_time_iso)
+        except Exception as e:
+            print(f"Error al obtener información de tercero: {e}")
+            raise CustomException("Error al obtener información de tercero.")
 
-                    # Obtener el estado del seguimiento
-                    seguimiento = self.querys.check_follow_up(sender, subject, received_time)
+    def calculate_expiry_date(self, datos: dict, fecha: any):
 
-                    # Guardamos los datos en nuestra variable respuesta y la formateamos en json
-                    response.append({
-                        "id": i+1,
-                        "remitente": sender,
-                        "asunto": subject,
-                        "fecha_hora": received_time,
-                        "seguimiento": seguimiento,
-                        "body": email.get('body', {}).get('content', ''),
-                    })
+        # Retornamos vacío si no hay fecha ni tipo de cliente
+        if not fecha or not datos["tipo_cliente"]:
+            return ""
+
+        # Convertimos en mayúscula el tipo de cliente
+        tipo_cliente = datos["tipo_cliente"].upper()
+
+        # Calculamos los dias adicionales dependiendo del tipo de cliente
+        dias_adicionales = 5 if tipo_cliente in [
+            "PUBLICO", "ESAL_PUBLICO"] else 2
+
+        # Obtenemos la fecha de vencimiento
+        expiry_date = self.add_business_days(fecha, dias_adicionales)
+
+        # Convertimos la fecha en string
+        expiry_date_field = expiry_date.strftime("%d-%m-%Y %H:%M:%S")
+
+        # Retornamos la fecha de vencimiento.
+        return expiry_date_field
+
+    def add_business_days(self, start_date, days_to_add):
+
+        fecha_obj = start_date
+        current_date = datetime.strptime(fecha_obj, "%d-%m-%Y %H:%M:%S")
+
+        # Si la hora de inicio está fuera del horario laboral, comenzar al siguiente día hábil
+        if current_date.time() < START_WORK_HOUR or current_date.time() > END_WORK_HOUR:
+            current_date = self.move_to_next_business_day(current_date)
+
+        # Contador de días hábiles agregados
+        added_days = 0
+        while added_days < days_to_add:
+            # Avanza un día
+            current_date += timedelta(days=1)
+            # Verifica si es un día hábil
+            if self.is_business_day(current_date):
+                added_days += 1
+
+        # Asegura que la fecha final esté dentro del horario laboral
+        if current_date.time() > END_WORK_HOUR:
+            current_date = datetime.combine(current_date.date(), START_WORK_HOUR)
+        return current_date
+
+    def is_business_day(self, date):
+        # Verifica que no sea sábado, domingo ni un día festivo
+        return date.weekday() < 5 and date.strftime("%Y-%m-%d") not in self.holidays
+
+    def move_to_next_business_day(self, date):
+        # Pasa al próximo día hábil si el día actual es fuera de horario o no hábil
+        while not self.is_business_day(date) or date.time() > END_WORK_HOUR:
+            date += timedelta(days=1)
+            date = datetime.combine(date, START_WORK_HOUR)
+        return date
+
+    def calculate_opportunity(self, fecha_entrega, fecha_vencimiento):
+        # Convertimos la fecha de vencimiento en tipo datetime para calcular 
+        fecha_vencimiento = datetime.strptime(fecha_vencimiento, "%d-%m-%Y %H:%M:%S")
+        # Restamos la fecha de entrega menos vencimiento
+        diff = fecha_entrega - fecha_vencimiento
+        # Retornamos la diferencia
+        return diff
+ 
+    def calculate_delivery_days(self, fecha_entrega, fecha_hora_correo):
+        # Convertimos la fecha del registro elegido en tipo datetime para calcular
+        fecha_entrada = datetime.strptime(fecha_hora_correo, "%d-%m-%Y %H:%M:%S")
+        fecha_entrada = fecha_entrada.astimezone(
+            pytz.timezone('America/Bogota')).replace(tzinfo=None)
+        # Restamos la fecha de entrega menos vencimiento
+        diff = fecha_entrega - fecha_entrada
+        # Retornamos la diferencia
+        return diff
+    
+    def consultar_cotizacion(self, data: dict):
+        
+        # Asignamos los datos de entrada a variables 
+        num_cot = data["numero_cotizacion"].strip()
+        fecha_hora_correo = data.get("fecha", None)
+        fecha_vencimiento = data.get("fecha_vencimiento", None)
+
+        # Inicializamos otras variables
+        dias_oportunidad = ""
+        dias_entrega = ""
+        response = dict()
+
+        try:
+            # Acá usamos la query para traer la información
+            datos = self.querys.consultar_cotizacion(num_cot)
+
+            if datos:
+                fecha_entrega = datos[0]["fecha_hora_entrega"]
+
+                # Calcular la oportunidad en la entrega
+                if fecha_vencimiento:
+                    diff_dias_oportunidad = self.calculate_opportunity(fecha_entrega, fecha_vencimiento)
+                    dias_oportunidad = diff_dias_oportunidad.days
+
+                # Calcular los días de entrega
+                if fecha_hora_correo:
+                    diff_dias_entrega = self.calculate_delivery_days(fecha_entrega, fecha_hora_correo)
+                    dias_entrega = diff_dias_entrega.days
+
+            # Obtenemos el seguimiento
+            seguimiento = self.querys.search_seguimiento(num_cot)
+
+            # Armamos el JSON de respuesta
+            response = {
+                "cotizacion": datos,
+                "informacion_extra": {
+                    "dias_oportunidad": dias_oportunidad,
+                    "dias_entrega": dias_entrega,
+                    "seguimiento": seguimiento,
+                },
+            }
 
             # Retornamos la información.
             return self.tools.output(200, "Datos encontrados.", response)
 
         except Exception as e:
-            print(f"Error al extraer correos: {e}")
-            raise CustomException("Error al extraer correos.")
+            print(f"Error al obtener información de cotización: {e}")
+            raise CustomException("Error al obtener información de cotización.")
 
-    def extract_emails(self, start_date, end_date):
+    def guardar_cotizacion(self, data: dict):
 
-        """Recupera correos electrónicos de una carpeta específica, opcionalmente dentro de un rango de fechas."""
-        folder_id = self.get_folder_id(PARENT_FOLDER, TARGET_FOLDER)
-        if not folder_id:
-            return []
+        # Iniciamos un diccionario vacio que será donde se guardara la información.
+        data_insert = dict()
 
-        filter_query = ""
-        if start_date and end_date:
-            filter_query = f"&$filter=receivedDateTime ge {start_date}T00:00:00Z and receivedDateTime le {end_date}T23:59:59Z"
+        # Asignamos los formatos de fecha deseados
+        normal_format = "%d-%m-%Y %H:%M:%S"
+        output_format = "%Y-%m-%d %H:%M:%S"
 
-        url = f"{MICROSOFT_URL_GRAPH}{EMAIL_USER}/mailFolders/{folder_id}/messages?$top=100{filter_query}&$select=from,subject,receivedDateTime,bodyPreview,body"
+        # Asignamos toda la información entrante a sus respectivas variables
+        email_sender = data.get("email_sender", "")
+        email_subject = data.get("email_subject", "")
+        email_datetime = data.get("email_datetime", "")
+        if email_datetime:
+            email_datetime = self.tools.format_date(email_datetime, normal_format, output_format)
+            email_datetime = datetime.strptime(email_datetime, '%Y-%m-%d %H:%M:%S')
+        nit = data.get("nit", "")
+        nombre = data.get("nombre", "")
+        coordinador = data.get("coordinador", "")
+        ejecutivo = data.get("ejecutivo", "")
+        tipo_cliente = data.get("tipo_cliente", "")
+        zona = data.get("zona", "")
+        fecha_vencimiento = data.get("fecha_vencimiento", "")
+        if fecha_vencimiento:
+            fecha_vencimiento = self.tools.format_date(fecha_vencimiento, normal_format, output_format)
+            fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d %H:%M:%S')
+        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", "")
+        items_a_cotizar = data.get("items_a_cotizar", "")
+        numero_cotizacion = data.get("numero_cotizacion", "")
+        cotizacion_concepto = data.get("cotizacion_concepto", "")
+        estado = data.get("estado", "")
+        fecha_entrega = data.get("fecha_entrega", "")
+        if fecha_entrega:
+            fecha_entrega = self.tools.format_date(fecha_entrega, '%d-%m-%Y', '%Y-%m-%d')
+            fecha_entrega = datetime.strptime(fecha_entrega, '%Y-%m-%d')
+        usuario_creador_cotizacion = data.get("usuario_creador_cotizacion", "")
+        pesos_cotizados = data.get("pesos_cotizados", None)
+        if pesos_cotizados:
+            pesos_cotizados = self.tools.format_money(pesos_cotizados)
+        items_cotizados = data.get("items_cotizados", "")
+        oportunidad_entrega = data.get("oportunidad_entrega", "")
+        dias_entrega = data.get("dias_entrega", "")
+
+        # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
+        if not email_sender or not email_subject or not email_datetime:
+            raise CustomException("Error al guardar los datos en la base de datos.")
         
-        emails = []
-        max_iterations = 100
-        iteration = 0
+        # Consultamos si existe cotización.
+        cotizacion = self.querys.buscar_cotizacion(
+            email_sender,
+            email_subject,
+            email_datetime
+        )
 
-        while url and iteration < max_iterations:
-            print(f"Haciendo solicitud a: {url}")
-            data = self._make_request(url)
-            if not data:
-                break
-            
-            new_emails = data.get('value', [])
-            if not new_emails:
-                print("No se recuperaron nuevos correos. Deteniendo.")
-                break
-            
-            emails.extend(new_emails)
-            url = data.get('@odata.nextLink')  # Paginación
-            iteration += 1
-
-        return emails
-
-    def get_folder_id(self, parent_folder: str, target_folder: str):
-
-        """Obtiene el ID de una carpeta específica dentro del correo del usuario."""
-        url = f"{MICROSOFT_URL_GRAPH}{EMAIL_USER}/mailFolders/{parent_folder}/childFolders"
-        data = self._make_request(url)
-        if data:
-            for folder in data.get('value', []):
-                if folder['displayName'] == target_folder:
-                    return folder['id']
-        print(f"No se encontró la carpeta {target_folder}.")
-        return None
-
-    def _make_request(self, endpoint):
-        """Realiza una petición GET a Microsoft Graph API."""
-        if not self.token:
-            print("No se pudo obtener el token de acceso.")
-            return None
-
-        headers = {'Authorization': f'Bearer {self.token}'}
-        response = requests.get(endpoint, headers=headers)
-        
-        if response.status_code == 200:
-            return response.json()
-        print(f"Error en la solicitud: {response.status_code} - {response.text}")
-        return None
-
-    def _get_access_token(self):
-        """Obtiene el token de acceso para autenticarse en Microsoft Graph API."""
-        url = f"{MICROSOFT_URL}{MICROSOFT_TENANT_ID}/oauth2/v2.0/token"
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        data = {
-            'client_id': MICROSOFT_CLIENT_ID,
-            'scope': ' '.join(MICROSOFT_API_SCOPE),
-            'client_secret': MICROSOFT_CLIENT_SECRET,
-            'grant_type': 'client_credentials'
+        # Armamos el JSON de guardado
+        data_insert = {
+            "email_sender": email_sender,
+            "email_subject": email_subject,
+            "email_datetime": email_datetime,
+            "nit": nit if nit else '',
+            "nombre": nombre if nombre else '',
+            "coordinador": coordinador if coordinador else '',
+            "ejecutivo": ejecutivo if ejecutivo else '',
+            "tipo_cliente": tipo_cliente if tipo_cliente else '',
+            "zona": zona if zona else '',
+            "fecha_vencimiento": fecha_vencimiento,
+            "items_a_cotizar": items_a_cotizar if items_a_cotizar else '',
+            "numero_cotizacion": numero_cotizacion if numero_cotizacion else '',
+            "cotizacion_concepto": cotizacion_concepto if cotizacion_concepto else '',
+            "estado": estado,
+            "fecha_entrega": fecha_entrega,
+            "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
+            "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
+            "items_cotizados": items_cotizados if items_cotizados else '',
+            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
+            "dias_entrega": dias_entrega if dias_entrega else '',
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento
         }
-        response = requests.post(url, headers=headers, data=data)
-        if response.status_code == 200:
-            return response.json().get('access_token')
-        print(f"Error obteniendo el token: {response.status_code} - {response.text}")
-        return None
+
+        # Validamos si existe, si no existe guardamos.
+        if cotizacion:
+            msg = "Ya existe un registro con esta información. ¿Desea guardar de todos modos?"
+            return self.tools.output(210, msg)
+        else:
+            self.querys.insert_datos_coti(data_insert)
+
+            return self.tools.output(200, "Datos guardados exitosamente en la base de datos.")
+
+    def actualizar_cotizacion(self, data: dict):
+
+        # Iniciamos un diccionario vacio que será donde se guardara la información.
+        data_update = dict()
+        data_valores_filtro = dict()
+
+        # Asignamos los formatos de fecha deseados
+        normal_format = "%d-%m-%Y %H:%M:%S"
+        output_format = "%Y-%m-%d %H:%M:%S"
+
+        # Asignamos toda la información entrante a sus respectivas variables
+        email_sender = data.get("email_sender", "")
+        email_subject = data.get("email_subject", "")
+        email_datetime = data.get("email_datetime", "")
+        if email_datetime:
+            email_datetime = self.tools.format_date(email_datetime, normal_format, output_format)
+            email_datetime = datetime.strptime(email_datetime, '%Y-%m-%d %H:%M:%S')
+        nit = data.get("nit", "")
+        nombre = data.get("nombre", "")
+        coordinador = data.get("coordinador", "")
+        ejecutivo = data.get("ejecutivo", "")
+        tipo_cliente = data.get("tipo_cliente", "")
+        zona = data.get("zona", "")
+        fecha_vencimiento = data.get("fecha_vencimiento", "")
+        if fecha_vencimiento:
+            fecha_vencimiento = self.tools.format_date(fecha_vencimiento, normal_format, output_format)
+            fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d %H:%M:%S')
+        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", "")
+        items_a_cotizar = data.get("items_a_cotizar", "")
+        numero_cotizacion = data.get("numero_cotizacion", "")
+        cotizacion_concepto = data.get("cotizacion_concepto", "")
+        estado = data.get("estado", "")
+        fecha_entrega = data.get("fecha_entrega", "")
+        if fecha_entrega:
+            fecha_entrega = self.tools.format_date(fecha_entrega, '%d-%m-%Y', '%Y-%m-%d')
+            fecha_entrega = datetime.strptime(fecha_entrega, '%Y-%m-%d')
+        usuario_creador_cotizacion = data.get("usuario_creador_cotizacion", "")
+        pesos_cotizados = data.get("pesos_cotizados", None)
+        if pesos_cotizados:
+            pesos_cotizados = self.tools.format_money(pesos_cotizados)
+        items_cotizados = data.get("items_cotizados", "")
+        oportunidad_entrega = data.get("oportunidad_entrega", "")
+        dias_entrega = data.get("dias_entrega", "")
+
+        # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
+        if not email_sender or not email_subject or not email_datetime:
+            raise CustomException("Error al guardar los datos en la base de datos.")
+
+        # Armamos el JSON de guardado
+        data_update = {
+            "nit": nit if nit else '',
+            "nombre": nombre if nombre else '',
+            "coordinador": coordinador if coordinador else '',
+            "ejecutivo": ejecutivo if ejecutivo else '',
+            "tipo_cliente": tipo_cliente if tipo_cliente else '',
+            "zona": zona if zona else '',
+            "items_a_cotizar": items_a_cotizar if items_a_cotizar else '',
+            "numero_cotizacion": numero_cotizacion if numero_cotizacion else '',
+            "cotizacion_concepto": cotizacion_concepto if cotizacion_concepto else '',
+            "estado": estado if estado else '',
+            "fecha_entrega": fecha_entrega,
+            "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
+            "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
+            "items_cotizados": items_cotizados if items_cotizados else '',
+            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
+            "dias_entrega": dias_entrega if dias_entrega else '',
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento
+        }
+
+        data_valores_filtro = {
+            "email_sender": email_sender,
+            "email_subject": email_subject,
+            "email_datetime": email_datetime,
+            "fecha_vencimiento": fecha_vencimiento
+        }
+
+        self.querys.update_datos_coti(data_update, data_valores_filtro)
+
+        return self.tools.output(200, "Registro actualizado exitosamente.")
+
+    def cargar_datos_cotizacion(self, data: dict):
+
+        # Iniciamos diccionario vacío,
+        response = dict()
+
+        # Asignamos los formatos de fecha deseados
+        normal_format = "%d-%m-%Y %H:%M:%S"
+        output_format = "%Y-%m-%d %H:%M:%S"
+
+        # Asignamos toda la información entrante a sus respectivas variables
+        email_sender = data.get("email_sender", "")
+        email_subject = data.get("email_subject", "")
+        email_datetime = data.get("email_datetime", "")
+        if email_datetime:
+            email_datetime = self.tools.format_date(email_datetime, normal_format, output_format)
+            email_datetime = datetime.strptime(email_datetime, '%Y-%m-%d %H:%M:%S')
+
+        # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
+        if not email_sender or not email_subject or not email_datetime:
+            raise CustomException("Seleccione un correo para comprobar su estado.")
+        
+        # Consultamos si existe cotización.
+        cotizacion = self.querys.buscar_cotizacion(
+            email_sender,
+            email_subject,
+            email_datetime
+        )
+
+        # Validamos si no existe la cotización.
+        if not cotizacion:
+            msg = "No se encontró un registro de seguimiento para el correo seleccionado."
+            raise CustomException(msg)
+        
+        response = {
+            "nit": cotizacion.nit,
+            "nombre": cotizacion.nombre,
+            "coordinador": cotizacion.coordinador,
+            "ejecutivo": cotizacion.ejecutivo,
+            "tipo_cliente": cotizacion.tipo_cliente,
+            "zona": cotizacion.zona,
+            "estado": cotizacion.estado,
+            "fecha_vencimiento": datetime.strptime(str(cotizacion.fecha_vencimiento), "%Y-%m-%d %H:%M:%S").strftime("%d-%m-%Y %H:%M:%S") if cotizacion.fecha_vencimiento else '',
+            "items_a_cotizar": cotizacion.items_a_cotizar,
+            "numero_cotizacion": cotizacion.numero_cotizacion
+        }
+
+        # Retornamos la respuesta
+        return self.tools.output(200, "Datos cargados correctamente desde el seguimiento.", response)

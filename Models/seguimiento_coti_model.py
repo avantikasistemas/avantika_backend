@@ -33,15 +33,25 @@ class SeguimientoCotiModel(BASE):
     seguimiento_fecha_creacion = Column(DateTime(), nullable=True)
     nueva_fecha_vencimiento = Column(Date, nullable=True)
     
-    # def __init__(self, data: dict):
-    #     self.type_document = data['type_document']
-    #     self.document = data['document']
-    #     self.first_name = data['first_name']
-    #     self.second_name = data['second_name']
-    #     self.last_name = data['last_name']
-    #     self.second_last_name = data['second_last_name']
-    #     self.full_name = data['full_name']
-    #     self.email = data['email']
-    #     self.password = data['password']
-    #     self.user_type_id = data['user_type_id']
-    
+    def __init__(self, data: dict):
+        self.email_sender = data['email_sender']
+        self.email_subject = data['email_subject']
+        self.email_datetime = data['email_datetime']
+        self.nit = data['nit']
+        self.nombre = data['nombre']
+        self.coordinador = data['coordinador']
+        self.ejecutivo = data['ejecutivo']
+        self.tipo_cliente = data['tipo_cliente']
+        self.zona = data['zona']
+        self.fecha_vencimiento = data['fecha_vencimiento']
+        self.numero_cotizacion = data['numero_cotizacion']
+        self.estado = data['estado']
+        self.cotizacion_concepto = data['cotizacion_concepto']
+        self.fecha_entrega = data['fecha_entrega']
+        self.usuario_creador_cotizacion = data['usuario_creador_cotizacion']
+        self.pesos_cotizados = data['pesos_cotizados']
+        self.items_cotizados = data['items_cotizados']
+        self.oportunidad_entrega = data['oportunidad_entrega']
+        self.dias_entrega = data['dias_entrega']
+        self.items_a_cotizar = data['items_a_cotizar']
+        self.nueva_fecha_vencimiento = data['nueva_fecha_vencimiento']

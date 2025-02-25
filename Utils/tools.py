@@ -12,6 +12,7 @@ from fastapi.encoders import jsonable_encoder
 # import smtplib
 import pytz
 from datetime import datetime, timezone
+from decimal import Decimal
 
 class Tools:
 
@@ -62,17 +63,31 @@ class Tools:
         }
 
     # Función para formatear las fechas    
-    def format_date(self, date):
-        fecha_objeto = datetime.strptime(date, "%d-%m-%Y")
-        fecha_formateada = fecha_objeto.strftime("%Y-%m-%d")
+    def format_date(self, date, normal_format, output_format):
+        fecha_objeto = datetime.strptime(date, normal_format)
+        fecha_formateada = fecha_objeto.strftime(output_format)
+        return fecha_formateada
+
+    # Función para formatear las fechas    
+    def format_date2(self, date):
+        # Convertir la cadena a un objeto datetime
+        fecha_objeto = datetime.fromisoformat(date)
+        # Formatear la fecha al formato deseado
+        fecha_formateada = fecha_objeto.strftime("%d-%m-%Y")
         return fecha_formateada
     
-    # Función para 
+    # Función para formatear fechas con zona horaria
     def format_datetime(self, dt_str):
         dt = datetime.strptime(
             dt_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         local_dt = dt.astimezone(pytz.timezone('America/Bogota'))
         return local_dt.strftime("%d-%m-%Y %H:%M:%S")
+    
+    # Función para formatear a dinero    
+    def format_money(self, value: str):
+        value = value.replace(",", "")
+        valor_decimal = Decimal(value)
+        return valor_decimal
 
     # """ Obtener archivo"""
     # def get_file_b64(self, file_path):

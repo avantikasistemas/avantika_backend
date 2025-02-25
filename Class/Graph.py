@@ -1,6 +1,7 @@
 import requests
 from Utils.tools import Tools, CustomException
 from Utils.querys import Querys
+from datetime import datetime
 
 from Utils.constants import (
     MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, MICROSOFT_TENANT_ID, 
@@ -25,12 +26,16 @@ class Graph:
         # Asignamos nuestros datos de entrada a sus respectivas variables
         start_date = data["start_date"]
         end_date = data["end_date"]
+        
+        # Asignamos los formatos de fecha deseados
+        normal_format = "%d-%m-%Y"
+        output_format = "%Y-%m-%d"
 
         # Formateamos las fechas a un formato valido si existen
         if start_date:
-            start_date = self.tools.format_date(start_date)
+            start_date = self.tools.format_date(start_date, normal_format, output_format)
         if end_date:    
-            end_date = self.tools.format_date(end_date)
+            end_date = self.tools.format_date(end_date, normal_format, output_format)
 
         try:
             # llamamos a la funcion extract emails para extraer los correos desde la api externa
@@ -155,3 +160,44 @@ class Graph:
             return response.json().get('access_token')
         print(f"Error obteniendo el token: {response.status_code} - {response.text}")
         return None
+
+    def actualizar_estado_seguimiento(self, data: dict):
+
+        email_list = data["email_list"]
+        new_email_list = list()
+
+        # Asignamos los formatos de fecha deseados
+        normal_format = "%d-%m-%Y %H:%M:%S"
+        output_format = "%Y-%m-%d %H:%M:%S"
+
+        # Validamos si hay correos
+        if not email_list:
+            raise CustomException("No hay una lista de correos a actualizar.")
+        
+        # Consultamos el seguimiento de cada uno de los correos
+        for email in email_list:
+            id = email["id"]
+            remitente = email["remitente"]
+            asunto = email["asunto"]
+            fecha_hora = email["fecha_hora"]
+            if fecha_hora:
+                new_fecha_hora = self.tools.format_date(fecha_hora, normal_format, output_format)
+                new_fecha_hora = datetime.strptime(new_fecha_hora, '%Y-%m-%d %H:%M:%S')
+            seguimiento = self.querys.check_follow_up(
+                remitente,
+                asunto,
+                new_fecha_hora,
+            )
+            body = email["body"]
+
+            # Armamos una lista con los correos y sus seguimientos actualizados
+            new_email_list.append({
+                "id": id,
+                "remitente": remitente,
+                "asunto": asunto,
+                "fecha_hora": fecha_hora,
+                "seguimiento": seguimiento,
+                "body": body
+            })
+        # Retornamos la lista
+        return self.tools.output(200, "Nueva lista exitosa.", new_email_list)

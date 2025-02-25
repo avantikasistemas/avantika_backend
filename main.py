@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from Config.db import BASE, engine
 from Middleware.get_json import JSONMiddleware
 from Router.Graph import graph_router
+from Router.Cotizacion import cotizacion_router
+from Router.Parametros import parametros_router
 # from pathlib import Path
 
 
@@ -24,5 +26,7 @@ app.add_middleware(
     allow_headers=["*"],  # Permitir todos los encabezados; puedes especificar los encabezados permitidos.
 )
 app.include_router(graph_router)
+app.include_router(cotizacion_router)
+app.include_router(parametros_router)
 
 BASE.metadata.create_all(bind=engine)
