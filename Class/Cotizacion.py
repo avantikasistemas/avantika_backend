@@ -210,6 +210,10 @@ class Cotizacion:
         dias_entrega = data.get("dias_entrega", "")
         motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
         desvio_oportunidad = data.get("desvio_oportunidad", "")
+        item_revisado_cumple = data.get("item_revisado_cumple", 0)
+        item_revisado_muestra = data.get("item_revisado_muestra", 0)
+        porcentaje_muestra = data.get("porcentaje_muestra", 0)
+        desvio_calidad = data.get("desvio_calidad", "")
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -247,6 +251,10 @@ class Cotizacion:
             "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
             "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
             "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
+            "item_revisado_cumple": item_revisado_cumple,
+            "item_revisado_muestra": item_revisado_muestra,
+            "porcentaje_muestra": porcentaje_muestra,
+            "desvio_calidad": desvio_calidad.strip() if desvio_calidad else '',
         }
 
         # Validamos si existe, si no existe guardamos.
@@ -303,6 +311,10 @@ class Cotizacion:
         dias_entrega = data.get("dias_entrega", "")
         motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
         desvio_oportunidad = data.get("desvio_oportunidad", "")
+        item_revisado_cumple = data.get("item_revisado_cumple", 0)
+        item_revisado_muestra = data.get("item_revisado_muestra", 0)
+        porcentaje_muestra = data.get("porcentaje_muestra", 0)
+        desvio_calidad = data.get("desvio_calidad", "")
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -329,6 +341,10 @@ class Cotizacion:
             "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
             "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
             "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
+            "item_revisado_cumple": item_revisado_cumple,
+            "item_revisado_muestra": item_revisado_muestra,
+            "porcentaje_muestra": porcentaje_muestra,
+            "desvio_calidad": desvio_calidad.strip() if desvio_calidad else '',
         }
 
         data_valores_filtro = {
@@ -389,6 +405,10 @@ class Cotizacion:
             "nueva_fecha_vencimiento": datetime.strptime(str(cotizacion.nueva_fecha_vencimiento), "%Y-%m-%d").strftime("%Y-%m-%d") if cotizacion.nueva_fecha_vencimiento else '',
             "motivo_no_cotizacion": cotizacion.motivo_no_cotizacion,
             "desvio_oportunidad": cotizacion.desvio_oportunidad,
+            "item_revisado_cumple": cotizacion.item_revisado_cumple,
+            "item_revisado_muestra": cotizacion.item_revisado_muestra,
+            "porcentaje_muestra": cotizacion.porcentaje_muestra,
+            "desvio_calidad": cotizacion.desvio_calidad,
         }
 
         # Retornamos la respuesta

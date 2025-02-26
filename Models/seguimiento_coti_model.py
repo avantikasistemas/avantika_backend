@@ -34,6 +34,10 @@ class SeguimientoCotiModel(BASE):
     nueva_fecha_vencimiento = Column(Date, nullable=True)
     motivo_no_cotizacion = Column(String, nullable=True)
     desvio_oportunidad = Column(String, nullable=True)
+    item_revisado_cumple = Column(Integer, default=0, nullable=True)
+    item_revisado_muestra = Column(Integer, default=0, nullable=True)
+    porcentaje_muestra = Column(Integer, default=0, nullable=True)
+    desvio_calidad = Column(String, nullable=True)
     
     def __init__(self, data: dict):
         self.email_sender = data['email_sender']
@@ -59,3 +63,7 @@ class SeguimientoCotiModel(BASE):
         self.nueva_fecha_vencimiento = data['nueva_fecha_vencimiento']
         self.motivo_no_cotizacion = data['motivo_no_cotizacion']
         self.desvio_oportunidad = data['desvio_oportunidad']
+        self.item_revisado_cumple = data['item_revisado_cumple']
+        self.item_revisado_muestra = data['item_revisado_muestra']
+        self.porcentaje_muestra = data['porcentaje_muestra']
+        self.desvio_calidad = data['desvio_calidad']
