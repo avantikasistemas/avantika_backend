@@ -32,6 +32,8 @@ class SeguimientoCotiModel(BASE):
     seguimiento_comentario = Column(Text)
     seguimiento_fecha_creacion = Column(DateTime(), nullable=True)
     nueva_fecha_vencimiento = Column(Date, nullable=True)
+    motivo_no_cotizacion = Column(String, nullable=True)
+    desvio_oportunidad = Column(String, nullable=True)
     
     def __init__(self, data: dict):
         self.email_sender = data['email_sender']
@@ -55,3 +57,5 @@ class SeguimientoCotiModel(BASE):
         self.dias_entrega = data['dias_entrega']
         self.items_a_cotizar = data['items_a_cotizar']
         self.nueva_fecha_vencimiento = data['nueva_fecha_vencimiento']
+        self.motivo_no_cotizacion = data['motivo_no_cotizacion']
+        self.desvio_oportunidad = data['desvio_oportunidad']

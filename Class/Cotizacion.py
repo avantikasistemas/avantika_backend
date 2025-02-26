@@ -208,6 +208,8 @@ class Cotizacion:
         items_cotizados = data.get("items_cotizados", "")
         oportunidad_entrega = data.get("oportunidad_entrega", "")
         dias_entrega = data.get("dias_entrega", "")
+        motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
+        desvio_oportunidad = data.get("desvio_oportunidad", "")
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -242,7 +244,9 @@ class Cotizacion:
             "items_cotizados": items_cotizados if items_cotizados else '',
             "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
             "dias_entrega": dias_entrega if dias_entrega else '',
-            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
+            "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
+            "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
         }
 
         # Validamos si existe, si no existe guardamos.
@@ -297,6 +301,8 @@ class Cotizacion:
         items_cotizados = data.get("items_cotizados", "")
         oportunidad_entrega = data.get("oportunidad_entrega", "")
         dias_entrega = data.get("dias_entrega", "")
+        motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
+        desvio_oportunidad = data.get("desvio_oportunidad", "")
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -320,7 +326,9 @@ class Cotizacion:
             "items_cotizados": items_cotizados if items_cotizados else '',
             "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
             "dias_entrega": dias_entrega if dias_entrega else '',
-            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
+            "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
+            "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
         }
 
         data_valores_filtro = {
@@ -379,6 +387,8 @@ class Cotizacion:
             "items_a_cotizar": cotizacion.items_a_cotizar,
             "numero_cotizacion": cotizacion.numero_cotizacion,
             "nueva_fecha_vencimiento": datetime.strptime(str(cotizacion.nueva_fecha_vencimiento), "%Y-%m-%d").strftime("%Y-%m-%d") if cotizacion.nueva_fecha_vencimiento else '',
+            "motivo_no_cotizacion": cotizacion.motivo_no_cotizacion,
+            "desvio_oportunidad": cotizacion.desvio_oportunidad,
         }
 
         # Retornamos la respuesta
