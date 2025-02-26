@@ -188,16 +188,16 @@ class Cotizacion:
         ejecutivo = data.get("ejecutivo", "")
         tipo_cliente = data.get("tipo_cliente", "")
         zona = data.get("zona", "")
-        fecha_vencimiento = data.get("fecha_vencimiento", "")
+        fecha_vencimiento = data.get("fecha_vencimiento", None)
         if fecha_vencimiento:
             fecha_vencimiento = self.tools.format_date(fecha_vencimiento, normal_format, output_format)
             fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d %H:%M:%S')
-        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", "")
+        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", None)
         items_a_cotizar = data.get("items_a_cotizar", "")
         numero_cotizacion = data.get("numero_cotizacion", "")
         cotizacion_concepto = data.get("cotizacion_concepto", "")
         estado = data.get("estado", "")
-        fecha_entrega = data.get("fecha_entrega", "")
+        fecha_entrega = data.get("fecha_entrega", None)
         if fecha_entrega:
             fecha_entrega = self.tools.format_date(fecha_entrega, '%d-%m-%Y', '%Y-%m-%d')
             fecha_entrega = datetime.strptime(fecha_entrega, '%Y-%m-%d')
@@ -231,18 +231,18 @@ class Cotizacion:
             "ejecutivo": ejecutivo if ejecutivo else '',
             "tipo_cliente": tipo_cliente if tipo_cliente else '',
             "zona": zona if zona else '',
-            "fecha_vencimiento": fecha_vencimiento,
+            "fecha_vencimiento": fecha_vencimiento if fecha_vencimiento else None,
             "items_a_cotizar": items_a_cotizar if items_a_cotizar else '',
             "numero_cotizacion": numero_cotizacion if numero_cotizacion else '',
             "cotizacion_concepto": cotizacion_concepto if cotizacion_concepto else '',
             "estado": estado,
-            "fecha_entrega": fecha_entrega,
+            "fecha_entrega": fecha_entrega if fecha_entrega else None,
             "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
             "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
             "items_cotizados": items_cotizados if items_cotizados else '',
             "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
             "dias_entrega": dias_entrega if dias_entrega else '',
-            "nueva_fecha_vencimiento": nueva_fecha_vencimiento
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None
         }
 
         # Validamos si existe, si no existe guardamos.
@@ -277,16 +277,16 @@ class Cotizacion:
         ejecutivo = data.get("ejecutivo", "")
         tipo_cliente = data.get("tipo_cliente", "")
         zona = data.get("zona", "")
-        fecha_vencimiento = data.get("fecha_vencimiento", "")
+        fecha_vencimiento = data.get("fecha_vencimiento", None)
         if fecha_vencimiento:
             fecha_vencimiento = self.tools.format_date(fecha_vencimiento, normal_format, output_format)
             fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d %H:%M:%S')
-        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", "")
+        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", None)
         items_a_cotizar = data.get("items_a_cotizar", "")
         numero_cotizacion = data.get("numero_cotizacion", "")
         cotizacion_concepto = data.get("cotizacion_concepto", "")
         estado = data.get("estado", "")
-        fecha_entrega = data.get("fecha_entrega", "")
+        fecha_entrega = data.get("fecha_entrega", None)
         if fecha_entrega:
             fecha_entrega = self.tools.format_date(fecha_entrega, '%d-%m-%Y', '%Y-%m-%d')
             fecha_entrega = datetime.strptime(fecha_entrega, '%Y-%m-%d')
@@ -314,13 +314,13 @@ class Cotizacion:
             "numero_cotizacion": numero_cotizacion if numero_cotizacion else '',
             "cotizacion_concepto": cotizacion_concepto if cotizacion_concepto else '',
             "estado": estado if estado else '',
-            "fecha_entrega": fecha_entrega,
+            "fecha_entrega": fecha_entrega if fecha_entrega else None,
             "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
             "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
             "items_cotizados": items_cotizados if items_cotizados else '',
             "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
             "dias_entrega": dias_entrega if dias_entrega else '',
-            "nueva_fecha_vencimiento": nueva_fecha_vencimiento
+            "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None
         }
 
         data_valores_filtro = {
@@ -377,7 +377,8 @@ class Cotizacion:
             "estado": cotizacion.estado,
             "fecha_vencimiento": datetime.strptime(str(cotizacion.fecha_vencimiento), "%Y-%m-%d %H:%M:%S").strftime("%d-%m-%Y %H:%M:%S") if cotizacion.fecha_vencimiento else '',
             "items_a_cotizar": cotizacion.items_a_cotizar,
-            "numero_cotizacion": cotizacion.numero_cotizacion
+            "numero_cotizacion": cotizacion.numero_cotizacion,
+            "nueva_fecha_vencimiento": datetime.strptime(str(cotizacion.nueva_fecha_vencimiento), "%Y-%m-%d").strftime("%Y-%m-%d") if cotizacion.nueva_fecha_vencimiento else '',
         }
 
         # Retornamos la respuesta

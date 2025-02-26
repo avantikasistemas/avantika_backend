@@ -23,7 +23,13 @@ class Querys:
             ).first()                 
 
             # Devolvemos el estado si la consulta encuentra una fila
-            return query.estado if query else "Sin seguimiento"
+            if query:
+                if query.estado == '' or not query.estado:
+                    return "Sin seguimiento"
+                else:
+                    return query.estado
+            else:
+                return "Sin seguimiento"
                 
         except Exception as ex:
             print(str(ex))
