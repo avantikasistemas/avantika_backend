@@ -1,20 +1,20 @@
 
-from Config.db import session
 from Utils.tools import Tools, CustomException
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, text
 from Models.seguimiento_coti_model import SeguimientoCotiModel
-from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 class Querys:
 
-    def __init__(self):
+    def __init__(self, db):
+        self.db = db
         self.tools = Tools()
 
     # Query para obtener el estado del seguimiento, si no lo tiene se agrega 'sin seguimiento'
     def check_follow_up(self, sender: str, subject: str, received_time: str):
 
         try:
-            query = session.query(
+            query = self.db.query(
                 SeguimientoCotiModel
             ).filter(
                 SeguimientoCotiModel.email_sender == sender,
@@ -35,7 +35,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
 
     # Query para obtener los datos del tercero por medio del nit
     def get_tercero_x_nit(self, nit: str):
@@ -58,7 +58,7 @@ class Querys:
                 WHERE t.nit = :nit;
             """
 
-            query = session.execute(text(sql), {"nit": nit}).fetchone()
+            query = self.db.execute(text(sql), {"nit": nit}).fetchone()
 
             if query:
                 response.update({
@@ -76,7 +76,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
     
     # Query para obtener los tipos de estado para la cotizacion
     def get_tipos_estado(self):
@@ -87,7 +87,7 @@ class Querys:
                 SELECT * FROM tipo_transacciones_concep2_ped WHERE sw = 2 ORDER BY concepto ASC;
             """
 
-            query = session.execute(text(sql)).fetchall()
+            query = self.db.execute(text(sql)).fetchall()
             if query:
                 for key in query:
                     response.append(key[2])
@@ -98,7 +98,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
     
     # Query para obtener los datos de la cotizacion
     def consultar_cotizacion(self, num_cot):
@@ -128,7 +128,7 @@ class Querys:
                 WHERE dp.numero = :numero AND dp.sw = 2;
             """
 
-            query = session.execute(text(sql), {"numero": num_cot}).fetchall()
+            query = self.db.execute(text(sql), {"numero": num_cot}).fetchall()
             if query:
                 for i, key in enumerate(query):
                     fecha_hora_entrega = key.fecha_hora_entrega if key.fecha_hora_entrega else ""
@@ -151,7 +151,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
 
     # Query para obtener la información del seguimiento.
     def search_seguimiento(self, num_cot):
@@ -164,7 +164,7 @@ class Querys:
                 FROM Q_Seguimiento_Actividades_CRM
                 WHERE documento = :documento;
             """
-            query = session.execute(text(sql), {"documento": num_cot}).fetchall()
+            query = self.db.execute(text(sql), {"documento": num_cot}).fetchall()
 
             if query:
                 for key in query:
@@ -183,13 +183,13 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
 
     # Query para buscar si la cotizacion existe
     def buscar_cotizacion(self, sender: str, subject: str, received_time: str):
 
         try:
-            query = session.query(
+            query = self.db.query(
                 SeguimientoCotiModel
             ).filter(
                 SeguimientoCotiModel.email_sender == sender,
@@ -204,37 +204,37 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
 
     # Query para insertar datos de la cotizacion.
     def insert_datos_coti(self, data: dict):
         try:
             details = SeguimientoCotiModel(data)
-            session.add(details)
-            session.commit()
+            self.db.add(details)
+            self.db.commit()
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
         return True
 
     # Query para actualizar los datos de la cotizacion.
     def update_datos_coti(self, data: dict, data_filtros: dict):
         try:
-            rows_updated = session.query(
+            rows_updated = self.db.query(
                 SeguimientoCotiModel
             ).filter(
                 SeguimientoCotiModel.email_sender == data_filtros["email_sender"],
                 SeguimientoCotiModel.email_subject == data_filtros["email_subject"],
                 SeguimientoCotiModel.email_datetime == data_filtros["email_datetime"]
             ).update(data)                     
-            session.commit()
+            self.db.commit()
             if rows_updated == 0:
                 print("No se encontró ningún registro para actualizar.")
                 
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            session.close()
+            self.db.close()
 
         return True

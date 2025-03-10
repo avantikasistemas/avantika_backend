@@ -3,14 +3,16 @@ from Utils.querys import Querys
 
 class Parametros:
 
-    def __init__(self):
+    def __init__(self, db):
+        self.db = db
         self.tools = Tools()
-        self.querys = Querys()
+        self.querys = Querys(self.db)
 
     def get_tipos_estado(self):
         """ Api que realiza la consulta de los estados. """
 
         try:
+            print("aaaaaaaaaaaaaa")
             # Acá usamos la query para traer la información
             datos = self.querys.get_tipos_estado()
 

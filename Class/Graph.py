@@ -11,9 +11,10 @@ from Utils.constants import (
 
 class Graph:
 
-    def __init__(self):
+    def __init__(self, db):
+        self.db = db
         self.tools = Tools()
-        self.querys = Querys()
+        self.querys = Querys(self.db)
         self.token = self._get_access_token()
 
     def get_emails(self, data: dict):

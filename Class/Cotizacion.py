@@ -8,9 +8,10 @@ from Utils.constants import (
 
 class Cotizacion:
 
-    def __init__(self):
+    def __init__(self, db):
+        self.db = db
         self.tools = Tools()
-        self.querys = Querys()
+        self.querys = Querys(self.db)
         self.holidays = {
             "2025-03-03", "2025-03-04",
             "2025-03-24", "2025-04-17", "2025-04-18", "2025-05-01", 
