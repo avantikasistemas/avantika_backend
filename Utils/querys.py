@@ -238,3 +238,39 @@ class Querys:
             self.db.close()
 
         return True
+
+    # Query para obtener los datos del tercero por medio del nit
+    def get_terceros(self, valor: str):
+
+        response = list()
+        try:
+            sql = """
+                SELECT t.nit, t.nombres, tv.coordinador, tv.ejecutivo, dbo.terceros_16.descripcion AS 'tipo_cliente', dbo.terceros_2.descripcion AS 'zona'
+                FROM   dbo.terceros AS t 
+                INNER JOIN dbo.terceros_ventas AS tv ON t.concepto_2 = tv.concepto_2 
+                INNER JOIN dbo.terceros_16 ON t.concepto_16 = dbo.terceros_16.concepto_16 
+                INNER JOIN dbo.terceros_2 ON t.concepto_2 = dbo.terceros_2.concepto_2
+                WHERE (t.nit LIKE :valor OR t.nombres LIKE :valor)
+            """
+
+            query = self.db.execute(text(sql), {"valor": f"%{valor}%"}).fetchall()
+
+            if query:
+                for key in query:   
+                    response.append({
+                        "nit": key.nit,
+                        "nombres": key.nombres,
+                        "coordinador": key.coordinador,
+                        "ejecutivo": key.ejecutivo,
+                        "tipo_cliente": key.tipo_cliente,
+                        "zona": key.zona,
+                    })
+
+            return response
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+    

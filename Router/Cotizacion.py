@@ -42,3 +42,10 @@ def cargar_datos_cotizacion(request: Request, db: Session = Depends(get_db)):
     data = getattr(request.state, "json_data", {})
     response = Cotizacion(db).cargar_datos_cotizacion(data)
     return response
+
+@cotizacion_router.post('/get_terceros', tags=["Cotización"], response_model=dict)
+@http_decorator
+def get_terceros(request: Request, db: Session = Depends(get_db)):
+    data = getattr(request.state, "json_data", {})
+    response = Cotizacion(db).get_terceros(data)
+    return response

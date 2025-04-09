@@ -414,3 +414,20 @@ class Cotizacion:
 
         # Retornamos la respuesta
         return self.tools.output(200, "Datos cargados correctamente desde el seguimiento.", response)
+
+    def get_terceros(self, data: dict):
+        """ Api que realiza la consulta del tercero a la base de datos. """
+
+        # Asignamos nuestros datos de entrada a sus respectivas variables
+        valor = data["valor"]
+
+        try:
+            # Acá usamos la query para traer la información
+            datos = self.querys.get_terceros(valor)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", datos)
+
+        except Exception as e:
+            print(f"Error al obtener información de tercero: {e}")
+            raise CustomException("Error al obtener información de tercero.")
