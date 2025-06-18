@@ -38,7 +38,9 @@ class SeguimientoCotiModel(BASE):
     item_revisado_muestra = Column(Integer, default=0, nullable=True)
     porcentaje_muestra = Column(Integer, default=0, nullable=True)
     desvio_calidad = Column(String, nullable=True)
-    
+    autorizacion_desvio_oportunidad = Column(Integer, nullable=True)
+    autorizacion_desvio_calidad = Column(Integer, nullable=True)
+
     def __init__(self, data: dict):
         self.email_sender = data['email_sender']
         self.email_subject = data['email_subject']
@@ -67,3 +69,5 @@ class SeguimientoCotiModel(BASE):
         self.item_revisado_muestra = data['item_revisado_muestra']
         self.porcentaje_muestra = data['porcentaje_muestra']
         self.desvio_calidad = data['desvio_calidad']
+        self.autorizacion_desvio_oportunidad = data['autorizacion_desvio_oportunidad']
+        self.autorizacion_desvio_calidad = data['autorizacion_desvio_calidad']

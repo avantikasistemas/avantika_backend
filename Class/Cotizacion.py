@@ -215,6 +215,8 @@ class Cotizacion:
         item_revisado_muestra = data.get("item_revisado_muestra", 0)
         porcentaje_muestra = data.get("porcentaje_muestra", 0)
         desvio_calidad = data.get("desvio_calidad", "")
+        autorizacion_desvio_oportunidad = data.get("autorizacion_desvio_oportunidad", None)
+        autorizacion_desvio_calidad = data.get("autorizacion_desvio_calidad", None)
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -256,6 +258,8 @@ class Cotizacion:
             "item_revisado_muestra": item_revisado_muestra,
             "porcentaje_muestra": porcentaje_muestra,
             "desvio_calidad": desvio_calidad.strip() if desvio_calidad else '',
+            "autorizacion_desvio_oportunidad": autorizacion_desvio_oportunidad if autorizacion_desvio_oportunidad else None,
+            "autorizacion_desvio_calidad": autorizacion_desvio_calidad if autorizacion_desvio_calidad else None
         }
 
         # Validamos si existe, si no existe guardamos.
@@ -316,6 +320,8 @@ class Cotizacion:
         item_revisado_muestra = data.get("item_revisado_muestra", 0)
         porcentaje_muestra = data.get("porcentaje_muestra", 0)
         desvio_calidad = data.get("desvio_calidad", "")
+        autorizacion_desvio_oportunidad = data.get("autorizacion_desvio_oportunidad", None)
+        autorizacion_desvio_calidad = data.get("autorizacion_desvio_calidad", None)
 
         # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
         if not email_sender or not email_subject or not email_datetime:
@@ -346,6 +352,8 @@ class Cotizacion:
             "item_revisado_muestra": item_revisado_muestra,
             "porcentaje_muestra": porcentaje_muestra,
             "desvio_calidad": desvio_calidad.strip() if desvio_calidad else '',
+            "autorizacion_desvio_oportunidad": autorizacion_desvio_oportunidad if autorizacion_desvio_oportunidad else None,
+            "autorizacion_desvio_calidad": autorizacion_desvio_calidad if autorizacion_desvio_calidad else None
         }
 
         data_valores_filtro = {
@@ -410,6 +418,8 @@ class Cotizacion:
             "item_revisado_muestra": cotizacion.item_revisado_muestra,
             "porcentaje_muestra": cotizacion.porcentaje_muestra,
             "desvio_calidad": cotizacion.desvio_calidad,
+            "autorizacion_desvio_oportunidad": cotizacion.autorizacion_desvio_oportunidad,
+            "autorizacion_desvio_calidad": cotizacion.autorizacion_desvio_calidad
         }
 
         # Retornamos la respuesta
