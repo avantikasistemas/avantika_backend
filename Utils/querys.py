@@ -3,6 +3,7 @@ from Utils.tools import Tools, CustomException
 from sqlalchemy import func, and_, text
 from Models.seguimiento_coti_model import SeguimientoCotiModel
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 class Querys:
 
@@ -273,4 +274,351 @@ class Querys:
             raise CustomException(str(ex))
         finally:
             self.db.close()
-    
+
+    # Query para revisar si la cotización existe en la base de datos.
+    def check_if_cotizacion_exists(self, cotizacion: str):
+
+        try:
+            result = dict()
+            sql = """
+                SELECT DISTINCT TOP (40000) 
+                    t1.descripcion AS descripcion_concep1,
+                    t2.descripcion AS descripcion_concep2,
+                    dp.fecha_hora_entrega,
+                    dp.usuario,
+                    -- Cálculo del total ajustado
+                    (SELECT SUM(cantidad * valor_unitario) 
+                    FROM dbo.documentos_lin_ped dl
+                    WHERE dl.numero = dp.numero AND dl.sw = dp.sw) AS Pesos_cotizados,
+                                    
+                    -- Conteo de filas
+                    (SELECT COUNT(*)
+                    FROM dbo.documentos_lin_ped dl
+                    WHERE dl.numero = dp.numero AND dl.sw = dp.sw) AS CantidadFilas,
+                    dp.nit, t.nombres as nombre_tercero
+                FROM dbo.documentos_ped dp
+                INNER JOIN dbo.tipo_transacciones_concep_ped t1 
+                    ON dp.sw = t1.sw AND dp.concepto = t1.concepto
+                INNER JOIN dbo.tipo_transacciones_concep2_ped t2 
+                    ON dp.concepto2 = t2.concepto
+                INNER JOIN terceros t on t.nit = dp.nit
+                WHERE dp.numero = :numero AND dp.sw = 2;
+            """
+            query = self.db.execute(text(sql), {"numero": cotizacion}).fetchone()
+            
+            if not query:
+                raise CustomException("No se encontró la cotización.")
+            
+            result = {
+                "descripcion_concep1": query.descripcion_concep1,
+                "descripcion_concep2": query.descripcion_concep2,
+                "fecha_hora_entrega": str(query.fecha_hora_entrega) if query.fecha_hora_entrega else "",
+                "usuario": query.usuario,
+                "Pesos_cotizados": f"{float(query.Pesos_cotizados):,.2f}" if query.Pesos_cotizados else 0,
+                "nit": query.nit,
+                "nombre_tercero": query.nombre_tercero,
+            }
+            
+            return result
+
+        except CustomException as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar el seguimiento de la cotización.
+    def guardar_seguimiento(self, data: dict):
+        try:
+            sql = """
+                INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
+                VALUES (:numero, :fecha_programacion, :usuario)
+            """
+            self.db.execute(text(sql), {
+                "numero": data["cotizacion"],
+                "fecha_programacion": data["fecha_programacion"],
+                "usuario": data["usuario"]
+            })
+            self.db.commit()
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+        return True
+
+    # Query para guardar la historia del seguimiento de la cotización.
+    def guardar_historia_seguimiento(self, data: dict):
+        try:
+            sql = """
+                INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
+                VALUES (:numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
+            """
+            self.db.execute(text(sql), {
+                "numero": data["cotizacion"],
+                "fecha_programacion": data["fecha_programacion"],
+                "usuario": data["usuario"],
+                "tipo_seguimiento": data["tipo_seguimiento"],
+                "contacto": data["contacto"]
+            })
+            self.db.commit()
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+        return True
+
+    # Query para obtener la historia del seguimiento de la cotización.
+    def get_historia_seguimiento(self, cotizacion: str):
+        try:
+            response = list()
+            sql = """
+                SELECT sph.id, sph.numero, sph.fecha_programacion, sph.usuario, ts.nombre AS tipo_seguimiento, sph.contacto, sph.resultado_seguimiento
+                FROM dbo.seguimiento_programacion_historia sph
+                LEFT JOIN dbo.tipo_seguimientos ts ON ts.id = sph.tipo_seguimiento
+                WHERE sph.numero = :numero AND sph.estado = 1;
+            """
+            query = self.db.execute(text(sql), {"numero": cotizacion}).fetchall()
+            for index, row in enumerate(query):
+                response.append({
+                    "index": index + 1,
+                    "id": row.id,
+                    "numero": row.numero,
+                    "fecha_programacion": str(row.fecha_programacion) if row.fecha_programacion else "",
+                    "usuario": row.usuario,
+                    "tipo_seguimiento": row.tipo_seguimiento,
+                    "contacto": row.contacto,
+                    "resultado_seguimiento": row.resultado_seguimiento
+                })
+            return response
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para obtener los tipos de seguimiento.
+    def tipo_seguimientos(self):
+        try:
+            response = list()
+            sql = """
+                SELECT * FROM tipo_seguimientos WHERE estado = 1;
+            """
+
+            query = self.db.execute(text(sql)).fetchall()
+            if query:
+                for key in query:
+                    response.append({
+                        "id": key.id,
+                        "nombre": key.nombre
+                    })
+
+            return response
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para obtener los contactos de la cotización.            
+    def get_contactos_cotizacion(self, nit: int):
+        try:
+            response = list()
+            sql = """
+                SELECT * FROM CRM_contactos WHERE nit = :nit AND tel_celular IS NOT NULL;
+            """
+            query = self.db.execute(text(sql), {"nit": nit}).fetchall()
+            for row in query:
+                response.append({
+                    "tel_celular": row.tel_celular,
+                    "nombre": row.nombre.upper()
+                })
+            return response
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para obtener los tipos de resultado de llamada.
+    def tipo_resultado_llamada(self):
+        try:
+            response = list()
+            sql = """
+                SELECT * FROM seguimiento_resultado_llamada WHERE estado = 1;
+            """
+
+            query = self.db.execute(text(sql)).fetchall()
+            if query:
+                for key in query:
+                    response.append({
+                        "id": key.id,
+                        "nombre": key.nombre
+                    })
+
+            return response
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para verificar si el seguimiento existe por ID y número.
+    def check_seguimiento_id(self, data: dict):
+        try:
+            sql = """
+                SELECT * FROM dbo.seguimiento_programacion_historia WHERE id = :id AND numero = :numero;
+            """
+            query = self.db.execute(text(sql), {"id": data["id"], "numero": data["numero"]}).first()
+            if not query:
+                raise CustomException("No se encontró el seguimiento con el ID y número proporcionados.")
+            return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para actualizar el resultado de la llamada.
+    def actualizar_resultado_llamada(self, data: dict):
+        try:
+
+            sql = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_llamada
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_llamada": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion 
+                SET resultado_seguimiento = :resultado_llamada
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_llamada": data["resultado_llamada"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+
+            return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para verificar si el seguimiento de la cotización ya existe.
+    def check_seguimiento_exists(self, cotizacion: str):
+        try:
+            sql = """
+                SELECT * FROM dbo.seguimiento_programacion WHERE numero = :numero AND estado = 1;
+            """
+            query = self.db.execute(text(sql), {"numero": cotizacion}).first()
+            if not query:
+                return False
+            return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para obtener los motivos de no adjudicación.
+    def motivos_no_adjudicacion(self):
+        try:
+            response = list()
+            sql = """
+                SELECT * FROM dbo.seguimiento_programacion_motivo_no_adjudicacion WHERE estado = 1;
+            """
+
+            query = self.db.execute(text(sql)).fetchall()
+            if query:
+                for key in query:
+                    response.append({
+                        "id": key.id,
+                        "nombre": key.nombre
+                    })
+
+            return response
+
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar la información de no adjudicación.
+    def guardar_no_adjudicacion(self, data: dict):
+        try:
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET motivo_no_adjudicacion_id = :motivo_no_adjudicacion_id, 
+                razon_no_adjudicacion = :razon_no_adjudicacion, fecha_no_adjudicacion = :fecha_no_adjudicacion
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "motivo_no_adjudicacion_id": data["motivo_no_adjudicacion"],
+                "razon_no_adjudicacion": data["razon_no_adjudicacion"],
+                "fecha_no_adjudicacion": datetime.now(),
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para obtener el resultado del seguimiento de la cotización.
+    def get_data_seguimiento(self, cotizacion: str):
+        try:
+            sql = """
+                SELECT * FROM dbo.seguimiento_programacion WHERE numero = :numero AND estado = 1;
+            """
+            query = self.db.execute(text(sql), {"numero": cotizacion}).first()
+
+            return None if not query else {
+                "id": query.id,
+                "numero": query.numero,
+                "fecha_programacion": str(query.fecha_programacion) if query.fecha_programacion else "",
+                "usuario": query.usuario,
+                "resultado_seguimiento": query.resultado_seguimiento,
+                "motivo_no_adjudicacion_id": query.motivo_no_adjudicacion_id,
+                "razon_no_adjudicacion": query.razon_no_adjudicacion,
+                "fecha_no_adjudicacion": str(query.fecha_no_adjudicacion) if query.fecha_no_adjudicacion else "",
+                "razon_adjudicacion": query.razon_adjudicacion,
+                "fecha_adjudicacion": str(query.fecha_adjudicacion) if query.fecha_adjudicacion else ""
+            }
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar la adjudicación de la cotización.      
+    def guardar_adjudicacion(self, data: dict):
+        try:
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET razon_adjudicacion = :razon_adjudicacion, 
+                fecha_adjudicacion = :fecha_adjudicacion
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "razon_adjudicacion": data["razon_adjudicacion"],
+                "fecha_adjudicacion": datetime.now(),
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()

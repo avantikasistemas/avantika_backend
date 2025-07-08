@@ -12,9 +12,50 @@ class Parametros:
         """ Api que realiza la consulta de los estados. """
 
         try:
-            print("aaaaaaaaaaaaaa")
             # Acá usamos la query para traer la información
             datos = self.querys.get_tipos_estado()
+
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", datos)
+
+        except Exception as e:
+            print(f"Error al obtener información de tercero: {e}")
+            raise CustomException("Error al obtener información de tercero.")
+
+    def tipo_seguimientos(self):
+        """ Api que realiza la consulta de los estados. """
+
+        try:
+            # Acá usamos la query para traer la información
+            datos = self.querys.tipo_seguimientos()
+
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", datos)
+
+        except Exception as e:
+            print(f"Error al obtener información de tercero: {e}")
+            raise CustomException("Error al obtener información de tercero.")
+
+    def tipo_resultado_llamada(self):
+        """ Api que realiza la consulta de los estados. """
+
+        try:
+            # Acá usamos la query para traer la información
+            datos = self.querys.tipo_resultado_llamada()
+
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", datos)
+
+        except Exception as e:
+            print(f"Error al obtener información de tercero: {e}")
+            raise CustomException("Error al obtener información de tercero.")
+
+    def motivos_no_adjudicacion(self):
+        """ Api que realiza la consulta de los estados. """
+
+        try:
+            # Acá usamos la query para traer la información
+            datos = self.querys.motivos_no_adjudicacion()
 
             # Retornamos la información.
             return self.tools.output(200, "Datos encontrados.", datos)

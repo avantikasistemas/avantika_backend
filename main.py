@@ -10,6 +10,7 @@ from Middleware.get_json import JSONMiddleware
 from Router.Graph import graph_router
 from Router.Cotizacion import cotizacion_router
 from Router.Parametros import parametros_router
+from Router.Seguimiento import seguimiento_router
 # from pathlib import Path
 
 
@@ -31,6 +32,7 @@ app.add_middleware(
 )
 app.include_router(graph_router)
 app.include_router(cotizacion_router)
+app.include_router(seguimiento_router)
 app.include_router(parametros_router)
 
 BASE.metadata.create_all(bind=engine)
