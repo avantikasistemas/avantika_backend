@@ -330,15 +330,28 @@ class Querys:
     # Query para guardar el seguimiento de la cotización.
     def guardar_seguimiento(self, data: dict):
         try:
-            sql = """
-                INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
-                VALUES (:numero, :fecha_programacion, :usuario)
-            """
-            self.db.execute(text(sql), {
-                "numero": data["cotizacion"],
-                "fecha_programacion": data["fecha_programacion"],
-                "usuario": data["usuario"]
-            })
+            flag = data.get("flag", True)
+            if flag is False:
+                sql = """
+                    INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
+                    VALUES (:numero, :fecha_programacion, :usuario)
+                """
+                self.db.execute(text(sql), {
+                    "numero": data["cotizacion"],
+                    "fecha_programacion": data["fecha_programacion"],
+                    "usuario": data["usuario"]
+                })
+            else:
+                sql = """
+                    INSERT INTO dbo.seguimiento_programacion (seguimiento_coti_id, numero, fecha_programacion, usuario)
+                    VALUES (:seguimiento_coti_id, :numero, :fecha_programacion, :usuario)
+                """
+                self.db.execute(text(sql), {
+                    "seguimiento_coti_id": data["seguimiento_coti_id"],
+                    "numero": data["cotizacion"],
+                    "fecha_programacion": data["fecha_programacion"],
+                    "usuario": data["usuario"]
+                })
             self.db.commit()
         except Exception as ex:
             raise CustomException(str(ex))
@@ -349,17 +362,32 @@ class Querys:
     # Query para guardar la historia del seguimiento de la cotización.
     def guardar_historia_seguimiento(self, data: dict):
         try:
-            sql = """
-                INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
-                VALUES (:numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
-            """
-            self.db.execute(text(sql), {
-                "numero": data["cotizacion"],
-                "fecha_programacion": data["fecha_programacion"],
-                "usuario": data["usuario"],
-                "tipo_seguimiento": data["tipo_seguimiento"],
-                "contacto": data["contacto"]
-            })
+            flag = data.get("flag", True)
+            if flag is False:
+                sql = """
+                    INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
+                    VALUES (:numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
+                """
+                self.db.execute(text(sql), {
+                    "numero": data["cotizacion"],
+                    "fecha_programacion": data["fecha_programacion"],
+                    "usuario": data["usuario"],
+                    "tipo_seguimiento": data.get("tipo_seguimiento", 1),
+                    "contacto": data.get("contacto", None)
+                })
+            else:
+                sql = """
+                    INSERT INTO dbo.seguimiento_programacion_historia (seguimiento_coti_id, numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
+                    VALUES (:seguimiento_coti_id, :numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
+                """
+                self.db.execute(text(sql), {
+                    "seguimiento_coti_id": data["seguimiento_coti_id"],
+                    "numero": data["cotizacion"],
+                    "fecha_programacion": data["fecha_programacion"],
+                    "usuario": data["usuario"],
+                    "tipo_seguimiento": data.get("tipo_seguimiento", 1),
+                    "contacto": data.get("contacto", None)
+                })
             self.db.commit()
         except Exception as ex:
             raise CustomException(str(ex))
@@ -617,6 +645,42 @@ class Querys:
             })
             self.db.commit()
             return True
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para buscar el historial de seguimiento de la cotización.
+    def buscar_seguimiento_historial(self, num_cot):
+        try:        
+            response = "No tiene seguimiento"
+            result = ""
+            sql = """
+                select sph.fecha_programacion, sph.usuario, srl.nombre as resultado_seguimiento, ts.nombre as tipo_seguimiento, 
+                sph.contacto, sph.created_at as fecha_creacion
+                from seguimiento_programacion_historia sph
+                inner join seguimiento_resultado_llamada srl on srl.id = sph.resultado_seguimiento  
+                inner join tipo_seguimientos ts on ts.id = sph.tipo_seguimiento  
+                where sph.estado = 1
+                AND srl.estado = 1
+                AND ts.estado = 1
+                AND numero = :numero
+            """
+            query = self.db.execute(text(sql), {"numero": num_cot}).fetchall()
+
+            if query:
+                for key in query:
+                    result += f"Usuario: {key.usuario}\n"
+                    result += f"Fecha Programación: {key.fecha_programacion}\n"
+                    result += f"Resultado Seguimiento: {key.resultado_seguimiento}\n"
+                    result += f"Tipo Seguimiento: {key.tipo_seguimiento}\n"
+                    result += f"Fecha creacion: {str(key.fecha_creacion)}\n"
+                    result += "-" * 70 + "\n"
+
+                response = result
+
+            return response
 
         except Exception as ex:
             raise CustomException(str(ex))
