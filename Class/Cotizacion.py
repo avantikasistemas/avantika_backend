@@ -126,8 +126,8 @@ class Cotizacion:
         fecha_vencimiento = data.get("fecha_vencimiento", None)
 
         # Inicializamos otras variables
-        dias_oportunidad = ""
-        dias_entrega = ""
+        dias_oportunidad = 0
+        dias_entrega = 0
         response = dict()
 
         try:
@@ -207,8 +207,8 @@ class Cotizacion:
         if pesos_cotizados:
             pesos_cotizados = self.tools.format_money(pesos_cotizados)
         items_cotizados = data.get("items_cotizados", "")
-        oportunidad_entrega = data.get("oportunidad_entrega", "")
-        dias_entrega = data.get("dias_entrega", "")
+        oportunidad_entrega = data.get("oportunidad_entrega", 0)
+        dias_entrega = data.get("dias_entrega", 0)
         motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
         desvio_oportunidad = data.get("desvio_oportunidad", "")
         item_revisado_cumple = data.get("item_revisado_cumple", 0)
@@ -249,8 +249,8 @@ class Cotizacion:
             "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
             "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
             "items_cotizados": items_cotizados if items_cotizados else '',
-            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
-            "dias_entrega": dias_entrega if dias_entrega else '',
+            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else 0,
+            "dias_entrega": dias_entrega if dias_entrega else 0,
             "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
             "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
             "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
@@ -312,8 +312,8 @@ class Cotizacion:
         if pesos_cotizados:
             pesos_cotizados = self.tools.format_money(pesos_cotizados)
         items_cotizados = data.get("items_cotizados", "")
-        oportunidad_entrega = data.get("oportunidad_entrega", "")
-        dias_entrega = data.get("dias_entrega", "")
+        oportunidad_entrega = data.get("oportunidad_entrega", 0)
+        dias_entrega = data.get("dias_entrega", 0)
         motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
         desvio_oportunidad = data.get("desvio_oportunidad", "")
         item_revisado_cumple = data.get("item_revisado_cumple", 0)
@@ -343,8 +343,8 @@ class Cotizacion:
             "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
             "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
             "items_cotizados": items_cotizados if items_cotizados else '',
-            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else '',
-            "dias_entrega": dias_entrega if dias_entrega else '',
+            "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else 0,
+            "dias_entrega": dias_entrega if dias_entrega else 0,
             "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
             "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
             "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
