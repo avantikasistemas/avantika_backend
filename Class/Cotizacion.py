@@ -5,6 +5,7 @@ import pytz
 from Utils.constants import (
     START_WORK_HOUR, END_WORK_HOUR
 )
+import traceback
 
 class Cotizacion:
 
@@ -169,7 +170,7 @@ class Cotizacion:
             print(f"Error al obtener información de cotización: {e}")
             raise CustomException("Error al obtener información de cotización.")
 
-    def guardar_cotizacion(self, data: dict):
+    def guardar_cotizacion2(self, data: dict):
 
         # Iniciamos un diccionario vacio que será donde se guardara la información.
         data_insert = dict()
@@ -294,6 +295,141 @@ class Cotizacion:
 
             return self.tools.output(200, "Datos guardados exitosamente en la base de datos.")
 
+    def guardar_cotizacion(self, data: dict):
+        try:
+            # Iniciamos un diccionario vacio que será donde se guardara la información.
+            data_insert = dict()
+
+            # Asignamos los formatos de fecha deseados
+            normal_format = "%d-%m-%Y %H:%M:%S"
+            output_format = "%Y-%m-%d %H:%M:%S"
+
+            # Asignamos toda la información entrante a sus respectivas variables
+            email_sender = data.get("email_sender", "")
+            email_subject = data.get("email_subject", "")
+            email_datetime = data.get("email_datetime", "")
+            if email_datetime:
+                email_datetime = self.tools.format_date(email_datetime, normal_format, output_format)
+                email_datetime = datetime.strptime(email_datetime, '%Y-%m-%d %H:%M:%S')
+            nit = data.get("nit", "")
+            nombre = data.get("nombre", "")
+            coordinador = data.get("coordinador", "")
+            ejecutivo = data.get("ejecutivo", "")
+            tipo_cliente = data.get("tipo_cliente", "")
+            zona = data.get("zona", "")
+            fecha_vencimiento = data.get("fecha_vencimiento", None)
+            if fecha_vencimiento:
+                fecha_vencimiento = self.tools.format_date(fecha_vencimiento, normal_format, output_format)
+                fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d %H:%M:%S')
+            nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", None)
+            items_a_cotizar = data.get("items_a_cotizar", "")
+            numero_cotizacion = data.get("numero_cotizacion", "")
+            cotizacion_concepto = data.get("cotizacion_concepto", "")
+            estado = data.get("estado", "")
+            fecha_entrega = data.get("fecha_entrega", None)
+            if fecha_entrega:
+                fecha_entrega = self.tools.format_date(fecha_entrega, '%d-%m-%Y', '%Y-%m-%d')
+                fecha_entrega = datetime.strptime(fecha_entrega, '%Y-%m-%d')
+            usuario_creador_cotizacion = data.get("usuario_creador_cotizacion", "")
+            pesos_cotizados = data.get("pesos_cotizados", None)
+            if pesos_cotizados:
+                pesos_cotizados = self.tools.format_money(pesos_cotizados)
+            items_cotizados = data.get("items_cotizados", "")
+            oportunidad_entrega = data.get("oportunidad_entrega", 0)
+            dias_entrega = data.get("dias_entrega", 0)
+            motivo_no_cotizacion = data.get("motivo_no_cotizacion", "")
+            desvio_oportunidad = data.get("desvio_oportunidad", "")
+            item_revisado_cumple = data.get("item_revisado_cumple", 0)
+            item_revisado_muestra = data.get("item_revisado_muestra", 0)
+            porcentaje_muestra = data.get("porcentaje_muestra", 0)
+            desvio_calidad = data.get("desvio_calidad", "")
+            autorizacion_desvio_oportunidad = data.get("autorizacion_desvio_oportunidad", None)
+            autorizacion_desvio_calidad = data.get("autorizacion_desvio_calidad", None)
+
+            # Validamos que no venga ni el correo, ni asunto ni fecha y hora vacias.
+            if not email_sender or not email_subject or not email_datetime:
+                raise CustomException("Error al guardar los datos en la base de datos.")
+            
+            # Consultamos si existe cotización.
+            cotizacion = self.querys.buscar_cotizacion(
+                email_sender,
+                email_subject,
+                email_datetime
+            )
+
+            # Armamos el JSON de guardado
+            data_insert = {
+                "email_sender": email_sender,
+                "email_subject": email_subject,
+                "email_datetime": email_datetime,
+                "nit": nit if nit else '',
+                "nombre": nombre if nombre else '',
+                "coordinador": coordinador if coordinador else '',
+                "ejecutivo": ejecutivo if ejecutivo else '',
+                "tipo_cliente": tipo_cliente if tipo_cliente else '',
+                "zona": zona if zona else '',
+                "fecha_vencimiento": fecha_vencimiento if fecha_vencimiento else None,
+                "items_a_cotizar": items_a_cotizar if items_a_cotizar else '',
+                "numero_cotizacion": numero_cotizacion if numero_cotizacion else '',
+                "cotizacion_concepto": cotizacion_concepto if cotizacion_concepto else '',
+                "estado": estado,
+                "fecha_entrega": fecha_entrega if fecha_entrega else None,
+                "usuario_creador_cotizacion": usuario_creador_cotizacion if usuario_creador_cotizacion else '',
+                "pesos_cotizados": pesos_cotizados if pesos_cotizados else None,
+                "items_cotizados": items_cotizados if items_cotizados else '',
+                "oportunidad_entrega": oportunidad_entrega if oportunidad_entrega else 0,
+                "dias_entrega": dias_entrega if dias_entrega else 0,
+                "nueva_fecha_vencimiento": nueva_fecha_vencimiento if nueva_fecha_vencimiento else None,
+                "motivo_no_cotizacion": motivo_no_cotizacion.strip() if motivo_no_cotizacion else '',
+                "desvio_oportunidad": desvio_oportunidad.strip() if desvio_oportunidad else '',
+                "item_revisado_cumple": item_revisado_cumple,
+                "item_revisado_muestra": item_revisado_muestra,
+                "porcentaje_muestra": porcentaje_muestra,
+                "desvio_calidad": desvio_calidad.strip() if desvio_calidad else '',
+                "autorizacion_desvio_oportunidad": autorizacion_desvio_oportunidad if autorizacion_desvio_oportunidad else None,
+                "autorizacion_desvio_calidad": autorizacion_desvio_calidad if autorizacion_desvio_calidad else None
+            }
+
+            # Validamos si existe, si no existe guardamos.
+            if cotizacion:
+                msg = "Ya existe un registro con esta información. ¿Desea guardar de todos modos?"
+                return self.tools.output(210, msg)
+            else:
+                self.querys.insert_datos_coti(data_insert)
+                
+                if estado == 'COT. ADJUDICACION':
+                    segui_coti_id = None
+
+                    # Si el estado es COT. ADJUDICACION, buscamos la cotización
+                    segui_coti_data = self.querys.buscar_cotizacion(
+                        email_sender,
+                        email_subject, 
+                        email_datetime
+                    )
+                    if segui_coti_data:
+                        segui_coti_id = segui_coti_data.id
+                        fecha_programacion = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
+                        data_guardar = {
+                            "seguimiento_coti_id": segui_coti_id,
+                            "numero": numero_cotizacion,
+                            "fecha_programacion": fecha_programacion,
+                            "usuario": usuario_creador_cotizacion,
+                            "flag": True
+                        }
+                        self.querys.guardar_seguimiento(data_guardar)
+                        
+                        # Guardamos la historia del seguimiento de la cotización
+                        self.querys.guardar_historia_seguimiento(data_guardar)
+
+
+                return self.tools.output(200, "Datos guardados exitosamente en la base de datos.")
+
+        except Exception as e:
+            tb = traceback.format_exc()  # Captura el traceback completo como string
+            print(f"Error al guardar la cotización: {e}\nTraceback: {tb}")
+            # También puedes devolver el traceback si estás en modo debug
+            raise CustomException(f"Error al guardar los datos en la base de datos")
+
     def actualizar_cotizacion(self, data: dict):
 
         # Iniciamos un diccionario vacio que será donde se guardara la información.
@@ -404,7 +540,8 @@ class Cotizacion:
                     "seguimiento_coti_id": segui_coti_id,
                     "cotizacion": numero_cotizacion,
                     "fecha_programacion": fecha_programacion,
-                    "usuario": usuario_creador_cotizacion
+                    "usuario": usuario_creador_cotizacion,
+                    "flag": True
                 }
                 # Guardamos el seguimiento de la cotización
                 self.querys.guardar_seguimiento(data_guardar)

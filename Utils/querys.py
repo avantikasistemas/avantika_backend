@@ -330,7 +330,8 @@ class Querys:
     # Query para guardar el seguimiento de la cotización.
     def guardar_seguimiento(self, data: dict):
         try:
-            flag = data.get("flag", True)
+            flag = data["flag"]
+            print(f"Data received for seguimiento: {data}")
             if flag is False:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
@@ -363,6 +364,7 @@ class Querys:
     def guardar_historia_seguimiento(self, data: dict):
         try:
             flag = data.get("flag", True)
+            print(f"Data received for seguimiento historia: {data}")
             if flag is False:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
