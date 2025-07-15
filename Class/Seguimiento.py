@@ -84,10 +84,10 @@ class Seguimiento:
             self.querys.check_seguimiento_id(data)
 
             # Actualizamos el resultado de la llamada.
-            self.querys.actualizar_resultado_llamada(data)
+            result_data = self.querys.actualizar_resultado_llamada(data)
 
             # Retornamos la información.
-            return self.tools.output(200, "Resultado de llamada actualizado.")
+            return self.tools.output(200, "Resultado de llamada actualizado.", result_data)
 
         except Exception as e:
             print(f"{e}")

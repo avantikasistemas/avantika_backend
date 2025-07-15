@@ -98,7 +98,7 @@ class Rules:
                 "tipo": "string",
                 "campo": "contacto",
                 "valor": params["contacto"],
-                "obligatorio": True,
+                "obligatorio": False,
             }
         ]
         return validacion_dict

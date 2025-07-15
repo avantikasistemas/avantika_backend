@@ -331,7 +331,6 @@ class Querys:
     def guardar_seguimiento(self, data: dict):
         try:
             flag = data["flag"]
-            print(f"Data received for seguimiento: {data}")
             if flag is False:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
@@ -363,8 +362,8 @@ class Querys:
     # Query para guardar la historia del seguimiento de la cotización.
     def guardar_historia_seguimiento(self, data: dict):
         try:
+            print(data)
             flag = data.get("flag", True)
-            print(f"Data received for seguimiento historia: {data}")
             if flag is False:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
@@ -536,8 +535,15 @@ class Querys:
                 "numero": data["numero"]
             })
             self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
 
-            return True
+            return result.resultado_seguimiento if result else None
 
         except Exception as ex:
             raise CustomException(str(ex))
@@ -683,6 +689,29 @@ class Querys:
                 response = result
 
             return response
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para verificar si el seguimiento de la cotización ya existe.
+    def check_seguimiento_exists_2(self, segui_coti_id: int, cotizacion: str):
+        try:
+            sql = """
+                SELECT * 
+                FROM dbo.seguimiento_programacion 
+                WHERE seguimiento_coti_id = :seguimiento_coti_id
+                AND numero = :numero
+                AND estado = 1;
+            """
+            query = self.db.execute(text(sql), {
+                    "seguimiento_coti_id": segui_coti_id, 
+                    "numero": cotizacion
+                }).first()
+            if not query:
+                return False
+            return True
 
         except Exception as ex:
             raise CustomException(str(ex))

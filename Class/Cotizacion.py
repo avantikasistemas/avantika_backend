@@ -6,6 +6,7 @@ from Utils.constants import (
     START_WORK_HOUR, END_WORK_HOUR
 )
 import traceback
+import requests
 
 class Cotizacion:
 
@@ -21,6 +22,7 @@ class Cotizacion:
             "2025-11-17", "2025-12-08", "2025-12-25"
         }
 
+    # Función para obtener el tercero por NIT
     def get_tercero_x_nit(self, data: dict):
         """ Api que realiza la consulta del tercero a la base de datos. """
 
@@ -45,6 +47,7 @@ class Cotizacion:
             print(f"Error al obtener información de tercero: {e}")
             raise CustomException("Error al obtener información de tercero.")
 
+    # Función para calcular la fecha de vencimiento de una cotización
     def calculate_expiry_date(self, datos: dict, fecha: any):
 
         # Retornamos vacío si no hay fecha ni tipo de cliente
@@ -67,6 +70,7 @@ class Cotizacion:
         # Retornamos la fecha de vencimiento.
         return expiry_date_field
 
+    # Función para agregar días hábiles a una fecha
     def add_business_days(self, start_date, days_to_add):
 
         fecha_obj = start_date
@@ -90,10 +94,12 @@ class Cotizacion:
             current_date = datetime.combine(current_date.date(), START_WORK_HOUR)
         return current_date
 
+    # Función para verificar si un día es hábil
     def is_business_day(self, date):
         # Verifica que no sea sábado, domingo ni un día festivo
         return date.weekday() < 5 and date.strftime("%Y-%m-%d") not in self.holidays
 
+    # Función para pasar al siguiente día hábil
     def move_to_next_business_day(self, date):
         # Pasa al próximo día hábil si el día actual es fuera de horario o no hábil
         while not self.is_business_day(date) or date.time() > END_WORK_HOUR:
@@ -101,6 +107,7 @@ class Cotizacion:
             date = datetime.combine(date, START_WORK_HOUR)
         return date
 
+    # Función para calcular la oportunidad en la entrega
     def calculate_opportunity(self, fecha_entrega, fecha_vencimiento):
         # Convertimos la fecha de vencimiento en tipo datetime para calcular 
         fecha_vencimiento = datetime.strptime(fecha_vencimiento, "%d-%m-%Y %H:%M:%S")
@@ -109,6 +116,7 @@ class Cotizacion:
         # Retornamos la diferencia
         return diff
  
+    # función para calcular los días de entrega
     def calculate_delivery_days(self, fecha_entrega, fecha_hora_correo):
         # Convertimos la fecha del registro elegido en tipo datetime para calcular
         fecha_entrada = datetime.strptime(fecha_hora_correo, "%d-%m-%Y %H:%M:%S")
@@ -118,7 +126,8 @@ class Cotizacion:
         diff = fecha_entrega - fecha_entrada
         # Retornamos la diferencia
         return diff
-    
+
+    # Api que busca una cotización.    
     def consultar_cotizacion(self, data: dict):
         
         # Asignamos los datos de entrada a variables 
@@ -295,6 +304,7 @@ class Cotizacion:
 
             return self.tools.output(200, "Datos guardados exitosamente en la base de datos.")
 
+    # Api que guarda la cotización.
     def guardar_cotizacion(self, data: dict):
         try:
             # Iniciamos un diccionario vacio que será donde se guardara la información.
@@ -397,29 +407,29 @@ class Cotizacion:
             else:
                 self.querys.insert_datos_coti(data_insert)
                 
-                if estado == 'COT. ADJUDICACION':
-                    segui_coti_id = None
+                # if estado == 'COT. ADJUDICACION':
+                #     segui_coti_id = None
 
-                    # Si el estado es COT. ADJUDICACION, buscamos la cotización
-                    segui_coti_data = self.querys.buscar_cotizacion(
-                        email_sender,
-                        email_subject, 
-                        email_datetime
-                    )
-                    if segui_coti_data:
-                        segui_coti_id = segui_coti_data.id
-                        fecha_programacion = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
-                        data_guardar = {
-                            "seguimiento_coti_id": segui_coti_id,
-                            "numero": numero_cotizacion,
-                            "fecha_programacion": fecha_programacion,
-                            "usuario": usuario_creador_cotizacion,
-                            "flag": True
-                        }
-                        self.querys.guardar_seguimiento(data_guardar)
+                #     # Si el estado es COT. ADJUDICACION, buscamos la cotización
+                #     segui_coti_data = self.querys.buscar_cotizacion(
+                #         email_sender,
+                #         email_subject, 
+                #         email_datetime
+                #     )
+                #     if segui_coti_data:
+                #         segui_coti_id = segui_coti_data.id
+                #         fecha_programacion = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
+                #         data_guardar = {
+                #             "seguimiento_coti_id": segui_coti_id,
+                #             "numero": numero_cotizacion,
+                #             "fecha_programacion": fecha_programacion,
+                #             "usuario": usuario_creador_cotizacion,
+                #             "flag": True
+                #         }
+                #         self.querys.guardar_seguimiento(data_guardar)
                         
-                        # Guardamos la historia del seguimiento de la cotización
-                        self.querys.guardar_historia_seguimiento(data_guardar)
+                #         # Guardamos la historia del seguimiento de la cotización
+                #         self.querys.guardar_historia_seguimiento(data_guardar)
 
 
                 return self.tools.output(200, "Datos guardados exitosamente en la base de datos.")
@@ -430,6 +440,7 @@ class Cotizacion:
             # También puedes devolver el traceback si estás en modo debug
             raise CustomException(f"Error al guardar los datos en la base de datos")
 
+    # Api que actualiza los datos de la cotización.
     def actualizar_cotizacion(self, data: dict):
 
         # Iniciamos un diccionario vacio que será donde se guardara la información.
@@ -524,6 +535,7 @@ class Cotizacion:
 
         self.querys.update_datos_coti(data_update, data_valores_filtro)
         
+        flag_mod = False
         if estado == 'COT. ADJUDICACION':
             segui_coti_id = None
 
@@ -535,22 +547,15 @@ class Cotizacion:
             )
             if segui_coti_data:
                 segui_coti_id = segui_coti_data.id
-                fecha_programacion = datetime.now().replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
-                data_guardar = {
-                    "seguimiento_coti_id": segui_coti_id,
-                    "cotizacion": numero_cotizacion,
-                    "fecha_programacion": fecha_programacion,
-                    "usuario": usuario_creador_cotizacion,
-                    "flag": True
-                }
-                # Guardamos el seguimiento de la cotización
-                self.querys.guardar_seguimiento(data_guardar)
+                data_segui = self.querys.check_seguimiento_exists_2(
+                    segui_coti_id,
+                    numero_cotizacion
+                )
+                flag_mod = data_segui
                 
-                # Guardamos la historia del seguimiento de la cotización
-                self.querys.guardar_historia_seguimiento(data_guardar)
+        return self.tools.output(200, "Registro actualizado exitosamente.", flag_mod)
 
-        return self.tools.output(200, "Registro actualizado exitosamente.")
-
+    # Api que carga los datos de la cotización.
     def cargar_datos_cotizacion(self, data: dict):
 
         # Iniciamos diccionario vacío,
@@ -609,8 +614,8 @@ class Cotizacion:
         # Retornamos la respuesta
         return self.tools.output(200, "Datos cargados correctamente desde el seguimiento.", response)
 
+    # Api que realiza la consulta del tercero a la base de datos.
     def get_terceros(self, data: dict):
-        """ Api que realiza la consulta del tercero a la base de datos. """
 
         # Asignamos nuestros datos de entrada a sus respectivas variables
         valor = data["valor"]
@@ -625,3 +630,104 @@ class Cotizacion:
         except Exception as e:
             print(f"Error al obtener información de tercero: {e}")
             raise CustomException("Error al obtener información de tercero.")
+
+    # Endpoint principal
+    def calcular_dia_habil(self, data: dict):
+        try:
+            fecha_dt = datetime.strptime(data["fecha"], "%Y-%m-%d").date()
+            feriados = self.obtener_feriados_colombia(fecha_dt.year)
+            siguiente_habil = self.siguiente_dia_habil(fecha_dt, feriados)
+            response = {
+                "fecha_inicial": fecha_dt.isoformat(),
+                "siguiente_dia_habil": siguiente_habil.isoformat()
+            }
+            return self.tools.output(200, "Operación exitosa.", response)
+        except ValueError:
+            raise CustomException("Formato de fecha inválido. Usa YYYY-MM-DD")
+
+    # Obtener días festivos desde la API pública
+    def obtener_feriados_colombia(self, anio: int):
+        url = f"https://date.nager.at/api/v3/PublicHolidays/{anio}/CO"
+        response = requests.get(url)
+        if response.status_code == 200:
+            feriados = [datetime.strptime(d['date'], "%Y-%m-%d").date() for d in response.json()]
+            return feriados
+        return []
+
+    # Calcular siguiente día hábil
+    def siguiente_dia_habil(self, fecha_inicial: datetime.date, feriados: list[datetime.date]) -> datetime.date:
+        siguiente = fecha_inicial + timedelta(days=1)
+        while siguiente.weekday() >= 5 or siguiente in feriados:
+            siguiente += timedelta(days=1)
+        return siguiente
+
+    # Obtener contactos por nit
+    def obtener_contactos(self, data: dict):
+        """ Api que realiza la consulta de contactos a la base de datos. """
+
+        # Asignamos nuestros datos de entrada a sus respectivas variables
+        nit = data["nit"]
+
+        try:
+            # Acá usamos la query para traer la información
+            contactos = self.querys.get_contactos_cotizacion(nit)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", contactos)
+
+        except Exception as e:
+            print(f"Error al obtener información de contactos: {e}")
+            raise CustomException("Error al obtener información de contactos.")
+
+    # Api que guarda el seguimiento de la cotización desde la vista principal.
+    def guardar_seguimiento_desde_principal(self, data: dict):
+        
+        try:
+            # Asignamos los formatos de fecha deseados
+            normal_format = "%d-%m-%Y %H:%M:%S"
+            output_format = "%Y-%m-%d %H:%M:%S"
+
+            # Asignamos toda la información entrante a sus respectivas variables
+            email_sender = data.get("email_sender", "")
+            email_subject = data.get("email_subject", "")
+            email_datetime = data.get("email_datetime", "")
+            if email_datetime:
+                email_datetime = self.tools.format_date(email_datetime, normal_format, output_format)
+                email_datetime = datetime.strptime(email_datetime, '%Y-%m-%d %H:%M:%S')
+            numero_cotizacion = data.get("numero_cotizacion", "")
+            usuario_creador_cotizacion = data.get("usuario_creador_cotizacion", "")
+            fecha_programacion = data.get("fecha_programacion", None)
+            hora_programacion = data.get("hora_programacion", None)
+            contacto = data.get("contacto", None)
+            fecha_programacion_final = datetime.strptime(
+                f"{fecha_programacion} {hora_programacion}:00", '%Y-%m-%d %H:%M:%S'
+                ) if fecha_programacion and hora_programacion else None
+                
+            segui_coti_data = self.querys.buscar_cotizacion(
+                email_sender,
+                email_subject, 
+                email_datetime
+            )
+            if segui_coti_data:
+                segui_coti_id = segui_coti_data.id
+                data_guardar = {
+                    "seguimiento_coti_id": segui_coti_id,
+                    "cotizacion": numero_cotizacion,
+                    "fecha_programacion": fecha_programacion_final,
+                    "usuario": usuario_creador_cotizacion,
+                    "contacto": contacto,
+                    "flag": True
+                }
+
+                # Guardamos el seguimiento de la cotización
+                self.querys.guardar_seguimiento(data_guardar)
+                
+                # Guardamos la historia del seguimiento de la cotización
+                self.querys.guardar_historia_seguimiento(data_guardar)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Seguimiento guardado exitosamente.")
+
+        except Exception as e:
+            print(f"Error al guardar el seguimiento: {e}")
+            raise CustomException("Error al guardar el seguimiento.")

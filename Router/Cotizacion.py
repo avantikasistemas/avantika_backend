@@ -49,3 +49,24 @@ def get_terceros(request: Request, db: Session = Depends(get_db)):
     data = getattr(request.state, "json_data", {})
     response = Cotizacion(db).get_terceros(data)
     return response
+
+@cotizacion_router.post('/calcular_dia_habil', tags=["Cotización"], response_model=dict)
+@http_decorator
+def calcular_dia_habil(request: Request, db: Session = Depends(get_db)):
+    data = getattr(request.state, "json_data", {})
+    response = Cotizacion(db).calcular_dia_habil(data)
+    return response
+
+@cotizacion_router.post('/obtener_contactos', tags=["Cotización"], response_model=dict)
+@http_decorator
+def obtener_contactos(request: Request, db: Session = Depends(get_db)):
+    data = getattr(request.state, "json_data", {})
+    response = Cotizacion(db).obtener_contactos(data)
+    return response
+
+@cotizacion_router.post('/guardar_seguimiento_desde_principal', tags=["Cotización"], response_model=dict)
+@http_decorator
+def guardar_seguimiento_desde_principal(request: Request, db: Session = Depends(get_db)):
+    data = getattr(request.state, "json_data", {})
+    response = Cotizacion(db).guardar_seguimiento_desde_principal(data)
+    return response
