@@ -362,7 +362,6 @@ class Querys:
     # Query para guardar la historia del seguimiento de la cotización.
     def guardar_historia_seguimiento(self, data: dict):
         try:
-            print(data)
             flag = data.get("flag", True)
             if flag is False:
                 sql = """
@@ -594,18 +593,39 @@ class Querys:
     def guardar_no_adjudicacion(self, data: dict):
         try:
             sql = """
-                UPDATE dbo.seguimiento_programacion SET motivo_no_adjudicacion_id = :motivo_no_adjudicacion_id, 
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento, motivo_no_adjudicacion_id = :motivo_no_adjudicacion_id, 
                 razon_no_adjudicacion = :razon_no_adjudicacion, fecha_no_adjudicacion = :fecha_no_adjudicacion
                 WHERE numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
                 "motivo_no_adjudicacion_id": data["motivo_no_adjudicacion"],
                 "razon_no_adjudicacion": data["razon_no_adjudicacion"],
                 "fecha_no_adjudicacion": datetime.now(),
                 "numero": data["cotizacion"]
             })
             self.db.commit()
-            return True
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
 
         except Exception as ex:
             raise CustomException(str(ex))

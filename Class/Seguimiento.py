@@ -99,10 +99,10 @@ class Seguimiento:
         try:
 
             # Actualizamos la información de no adjudicación.
-            self.querys.guardar_no_adjudicacion(data)
+            data_segui = self.querys.guardar_no_adjudicacion(data)
 
             # Retornamos la información.
-            return self.tools.output(200, "Información guardada con éxito.")
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
 
         except Exception as e:
             print(f"{e}")
