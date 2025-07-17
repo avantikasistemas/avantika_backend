@@ -34,9 +34,9 @@ def guardar_no_adjudicacion(request: Request, db: Session = Depends(get_db)):
     response = Seguimiento(db).guardar_no_adjudicacion(data)
     return response
 
-@seguimiento_router.post('/guardar_adjudicacion', tags=["Seguimiento"], response_model=dict)
+@seguimiento_router.post('/guardar_en_estudio', tags=["Seguimiento"], response_model=dict)
 @http_decorator
-def guardar_adjudicacion(request: Request, db: Session = Depends(get_db)):
+def guardar_en_estudio(request: Request, db: Session = Depends(get_db)):
     data = getattr(request.state, "json_data", {})
-    response = Seguimiento(db).guardar_adjudicacion(data)
+    response = Seguimiento(db).guardar_en_estudio(data)
     return response

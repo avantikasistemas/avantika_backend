@@ -650,7 +650,8 @@ class Querys:
                 "razon_no_adjudicacion": query.razon_no_adjudicacion,
                 "fecha_no_adjudicacion": str(query.fecha_no_adjudicacion) if query.fecha_no_adjudicacion else "",
                 "razon_adjudicacion": query.razon_adjudicacion,
-                "fecha_adjudicacion": str(query.fecha_adjudicacion) if query.fecha_adjudicacion else ""
+                "fecha_adjudicacion": str(query.fecha_adjudicacion) if query.fecha_adjudicacion else "",
+                "comentario_en_estudio": query.comentario_en_estudio
             }
 
         except Exception as ex:
@@ -658,21 +659,41 @@ class Querys:
         finally:
             self.db.close()
 
-    # Query para guardar la adjudicación de la cotización.      
-    def guardar_adjudicacion(self, data: dict):
-        try:
+    # Query para guardar el seguimiento en estudio.
+    def guardar_en_estudio(self, data: dict):
+        try:            
             sql = """
-                UPDATE dbo.seguimiento_programacion SET razon_adjudicacion = :razon_adjudicacion, 
-                fecha_adjudicacion = :fecha_adjudicacion
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento, 
+                comentario_en_estudio = :comentario_en_estudio
                 WHERE numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql), {
-                "razon_adjudicacion": data["razon_adjudicacion"],
-                "fecha_adjudicacion": datetime.now(),
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_en_estudio": data["comentario_en_estudio"],
                 "numero": data["cotizacion"]
             })
             self.db.commit()
-            return True
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
 
         except Exception as ex:
             raise CustomException(str(ex))

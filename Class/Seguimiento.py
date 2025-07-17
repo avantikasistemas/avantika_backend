@@ -110,14 +110,14 @@ class Seguimiento:
             raise CustomException(f"{e}")
 
     # Api que guarda la información de adjudicación.
-    def guardar_adjudicacion(self, data: dict):
+    def guardar_en_estudio(self, data: dict):
         try:
 
             # Actualizamos la información de adjudicación.
-            self.querys.guardar_adjudicacion(data)
+            data_segui = self.querys.guardar_en_estudio(data)
 
             # Retornamos la información.
-            return self.tools.output(200, "Información guardada con éxito.")
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
 
         except Exception as e:
             print(f"{e}")
