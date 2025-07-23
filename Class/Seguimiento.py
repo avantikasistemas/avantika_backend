@@ -53,20 +53,28 @@ class Seguimiento:
     def guardar_seguimiento(self, data: dict):
 
         # Formateamos la fecha de programación.
-        data["fecha_programacion"] = datetime.strptime(data["fecha_programacion"], "%Y-%m-%dT%H:%M") if data["fecha_programacion"] else None
+        data["fecha_programacion"] = datetime.strptime(
+            data["fecha_programacion"], 
+            "%Y-%m-%dT%H:%M"
+        ) if data["fecha_programacion"] else None
 
         try:
             # Acá revisamos si existe o no la cotización.
             self.querys.check_if_cotizacion_exists(data["cotizacion"])
             
+            # Acá revisamos si la cotización ya tiene un seguimiento creado
+            # desde el correo.
+            self.querys.check_seguimiento_coti_correo_exists(data["cotizacion"])
+            
             # Revisamos si el seguimiento ya existe.
             segui = self.querys.check_seguimiento_exists(data["cotizacion"])
+            segui_progra_id = segui.id if segui else None
             if not segui:
                 # Guardamos el seguimiento de la cotización.
-                self.querys.guardar_seguimiento(data)
+                segui_progra_id = self.querys.guardar_seguimiento(data)
             
             # Guardamos la historia del seguimiento.
-            self.querys.guardar_historia_seguimiento(data)
+            self.querys.guardar_historia_seguimiento(data, segui_progra_id)
 
             # Retornamos la información.
             return self.tools.output(200, "Seguimiento guardado.")

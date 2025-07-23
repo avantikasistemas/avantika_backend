@@ -4,6 +4,7 @@ from sqlalchemy import func, and_, text
 from Models.seguimiento_coti_model import SeguimientoCotiModel
 from sqlalchemy.orm import Session
 from datetime import datetime
+import traceback
 
 class Querys:
 
@@ -330,13 +331,15 @@ class Querys:
     # Query para guardar el seguimiento de la cotización.
     def guardar_seguimiento(self, data: dict):
         try:
+
             flag = data["flag"]
             if flag is False:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion (numero, fecha_programacion, usuario)
+                    OUTPUT INSERTED.id
                     VALUES (:numero, :fecha_programacion, :usuario)
                 """
-                self.db.execute(text(sql), {
+                result = self.db.execute(text(sql), {
                     "numero": data["cotizacion"],
                     "fecha_programacion": data["fecha_programacion"],
                     "usuario": data["usuario"]
@@ -344,31 +347,36 @@ class Querys:
             else:
                 sql = """
                     INSERT INTO dbo.seguimiento_programacion (seguimiento_coti_id, numero, fecha_programacion, usuario)
+                    OUTPUT INSERTED.id
                     VALUES (:seguimiento_coti_id, :numero, :fecha_programacion, :usuario)
                 """
-                self.db.execute(text(sql), {
+                result = self.db.execute(text(sql), {
                     "seguimiento_coti_id": data["seguimiento_coti_id"],
                     "numero": data["cotizacion"],
                     "fecha_programacion": data["fecha_programacion"],
                     "usuario": data["usuario"]
                 })
+                
+            inserted_id = result.scalar()  # Captura el ID insertado
             self.db.commit()
+            return inserted_id
+
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
             self.db.close()
-        return True
 
     # Query para guardar la historia del seguimiento de la cotización.
-    def guardar_historia_seguimiento(self, data: dict):
+    def guardar_historia_seguimiento(self, data, segui_progra_id):
         try:
             flag = data.get("flag", True)
             if flag is False:
                 sql = """
-                    INSERT INTO dbo.seguimiento_programacion_historia (numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
-                    VALUES (:numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
+                    INSERT INTO dbo.seguimiento_programacion_historia (seguimiento_programacion_id, numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
+                    VALUES (:seguimiento_programacion_id, :numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
                 """
                 self.db.execute(text(sql), {
+                    "seguimiento_programacion_id": segui_progra_id,
                     "numero": data["cotizacion"],
                     "fecha_programacion": data["fecha_programacion"],
                     "usuario": data["usuario"],
@@ -377,11 +385,11 @@ class Querys:
                 })
             else:
                 sql = """
-                    INSERT INTO dbo.seguimiento_programacion_historia (seguimiento_coti_id, numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
-                    VALUES (:seguimiento_coti_id, :numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
+                    INSERT INTO dbo.seguimiento_programacion_historia (seguimiento_programacion_id, numero, fecha_programacion, usuario, tipo_seguimiento, contacto)
+                    VALUES (:seguimiento_programacion_id, :numero, :fecha_programacion, :usuario, :tipo_seguimiento, :contacto)
                 """
                 self.db.execute(text(sql), {
-                    "seguimiento_coti_id": data["seguimiento_coti_id"],
+                    "seguimiento_programacion_id": segui_progra_id,
                     "numero": data["cotizacion"],
                     "fecha_programacion": data["fecha_programacion"],
                     "usuario": data["usuario"],
@@ -390,6 +398,8 @@ class Querys:
                 })
             self.db.commit()
         except Exception as ex:
+            print(f"{ex}")
+            print(traceback.format_exc())  
             raise CustomException(str(ex))
         finally:
             self.db.close()
@@ -558,7 +568,7 @@ class Querys:
             query = self.db.execute(text(sql), {"numero": cotizacion}).first()
             if not query:
                 return False
-            return True
+            return query
 
         except Exception as ex:
             raise CustomException(str(ex))
@@ -755,6 +765,26 @@ class Querys:
             return True
 
         except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para verificar si existe un correo asociado a la cotización.
+    def check_seguimiento_coti_correo_exists(self, num_cot):
+        try:
+            sql = """
+                SELECT * 
+                FROM dbo.seguimiento_coti 
+                WHERE numero_cotizacion = :numero;
+            """
+            query = self.db.execute(text(sql), {"numero": num_cot}).fetchall()
+            if not query:
+                raise CustomException(
+                    "Este número de cotización no tiene correo asociado."
+                )
+            return True
+
+        except CustomException as ex:
             raise CustomException(str(ex))
         finally:
             self.db.close()
