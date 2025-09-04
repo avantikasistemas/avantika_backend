@@ -464,7 +464,7 @@ class Querys:
         try:
             response = list()
             sql = """
-                SELECT * FROM CRM_contactos WHERE nit = :nit AND tel_celular IS NOT NULL;
+                SELECT * FROM CRM_contactos WHERE nit = :nit ORDER BY nombre ASC;
             """
             query = self.db.execute(text(sql), {"nit": nit}).fetchall()
             for row in query:
