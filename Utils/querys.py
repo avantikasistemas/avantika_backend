@@ -605,13 +605,12 @@ class Querys:
         try:
             sql = """
                 UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento, motivo_no_adjudicacion_id = :motivo_no_adjudicacion_id, 
-                razon_no_adjudicacion = :razon_no_adjudicacion, fecha_no_adjudicacion = :fecha_no_adjudicacion
+                fecha_no_adjudicacion = :fecha_no_adjudicacion
                 WHERE numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql), {
                 "resultado_seguimiento": data["resultado_llamada"],
                 "motivo_no_adjudicacion_id": data["motivo_no_adjudicacion"],
-                "razon_no_adjudicacion": data["razon_no_adjudicacion"],
                 "fecha_no_adjudicacion": datetime.now(),
                 "numero": data["cotizacion"]
             })
@@ -651,19 +650,7 @@ class Querys:
             """
             query = self.db.execute(text(sql), {"numero": cotizacion}).first()
 
-            return None if not query else {
-                "id": query.id,
-                "numero": query.numero,
-                "fecha_programacion": str(query.fecha_programacion) if query.fecha_programacion else "",
-                "usuario": query.usuario,
-                "resultado_seguimiento": query.resultado_seguimiento,
-                "motivo_no_adjudicacion_id": query.motivo_no_adjudicacion_id,
-                "razon_no_adjudicacion": query.razon_no_adjudicacion,
-                "fecha_no_adjudicacion": str(query.fecha_no_adjudicacion) if query.fecha_no_adjudicacion else "",
-                "razon_adjudicacion": query.razon_adjudicacion,
-                "fecha_adjudicacion": str(query.fecha_adjudicacion) if query.fecha_adjudicacion else "",
-                "comentario_en_estudio": query.comentario_en_estudio
-            }
+            return dict(query._mapping) if query else None
 
         except Exception as ex:
             raise CustomException(str(ex))
@@ -787,6 +774,211 @@ class Querys:
             return dict(query._mapping)
 
         except CustomException as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar el seguimiento de no contesta.
+    def guardar_no_contesta(self, data: dict):
+        try:            
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_no_contesta = :comentario_no_contesta
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_no_contesta": data["comentario_no_contesta"],
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+    
+    # Query para guardar la llamada para más tarde.
+    def guardar_llamar_mas_tarde(self, data: dict):
+        try:            
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento, 
+                comentario_llamar_mas_tarde = :comentario_llamar_mas_tarde
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_llamar_mas_tarde": data["comentario_llamar_mas_tarde"],
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar la reprogramación de la llamada.
+    def guardar_reprogramar_llamada(self, data: dict):
+        try:            
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento, 
+                comentario_reprogramar_llamada = :comentario_reprogramar_llamada
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_reprogramar_llamada": data["comentario_reprogramar_llamada"],
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar el seguimiento no confirmado.
+    def guardar_no_confirmado(self, data: dict):
+        try:            
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_no_confirmado = :comentario_no_confirmado
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_no_confirmado": data["comentario_no_confirmado"],
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
+
+        except Exception as ex:
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    # Query para guardar el seguimiento presentado en plataforma.
+    def guardar_presentado_plataforma(self, data: dict):
+        try:            
+            sql = """
+                UPDATE dbo.seguimiento_programacion SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_presentado_plataforma = :comentario_presentado_plataforma
+                WHERE numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_presentado_plataforma": data["comentario_presentado_plataforma"],
+                "numero": data["cotizacion"]
+            })
+            self.db.commit()
+            
+            sql2 = """
+                UPDATE dbo.seguimiento_programacion_historia 
+                SET resultado_seguimiento = :resultado_seguimiento
+                WHERE id = :id AND numero = :numero AND estado = 1;
+            """
+            self.db.execute(text(sql2), {
+                "resultado_seguimiento": data["resultado_llamada"],
+                "id": data["id"],
+                "numero": data["numero"]
+            })
+            self.db.commit()
+            
+            # Consulta del objeto actualizado desde la tabla principal
+            sql_select = """
+                SELECT * FROM dbo.seguimiento_programacion 
+                WHERE numero = :numero AND estado = 1;
+            """
+            result = self.db.execute(text(sql_select), {"numero": data["numero"]}).fetchone()
+
+            return result.resultado_seguimiento if result else None
+
+        except Exception as ex:
             raise CustomException(str(ex))
         finally:
             self.db.close()

@@ -135,3 +135,77 @@ class Seguimiento:
             print(f"{e}")
             print(traceback.format_exc())
             raise CustomException(f"{e}")
+
+    # Api que guarda la información de no contesta.
+    def guardar_no_contesta(self, data: dict):
+        try:
+            # Actualizamos la información de no contesta.
+            data_segui = self.querys.guardar_no_contesta(data)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
+
+        except Exception as e:
+            print(f"{e}")
+            print(traceback.format_exc())
+            raise CustomException(f"{e}")
+
+    # Api que guarda la información de llamar más tarde.
+    def guardar_llamar_mas_tarde(self, data: dict):
+
+        try:
+            # Actualizamos la información de llamar más tarde.
+            data_segui = self.querys.guardar_llamar_mas_tarde(data)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
+
+        except Exception as e:
+            print(f"{e}")
+            print(traceback.format_exc())
+            raise CustomException(f"{e}")
+        
+    # Api que guarda la información de reprogramar llamada.
+    def guardar_reprogramar_llamada(self, data: dict):
+
+        try:
+            # Actualizamos la información de reprogramar llamada.
+            data_segui = self.querys.guardar_reprogramar_llamada(data)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
+
+        except Exception as e:
+            print(f"{e}")
+            print(traceback.format_exc())
+            raise CustomException(f"{e}")
+        
+    # Api que guarda la información de no confirmado.
+    def guardar_no_confirmado(self, data: dict):
+
+        try:
+            # Actualizamos la información de no confirmado.
+            data_segui = self.querys.guardar_no_confirmado(data)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
+
+        except Exception as e:
+            print(f"{e}")
+            print(traceback.format_exc())
+            raise CustomException(f"{e}")
+        
+    # Api que guarda la información de presentado en plataforma.
+    def guardar_presentado_plataforma(self, data: dict):
+
+        try:
+            # Actualizamos la información de presentado en plataforma.
+            data_segui = self.querys.guardar_presentado_plataforma(data)
+
+            # Retornamos la información.
+            return self.tools.output(200, "Información guardada con éxito.", data_segui)
+
+        except Exception as e:
+            print(f"{e}")
+            print(traceback.format_exc())
+            raise CustomException(f"{e}")
