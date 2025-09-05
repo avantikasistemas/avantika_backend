@@ -618,11 +618,15 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                motivo_no_adjudicacion_id = :motivo_no_adjudicacion_id,
+                fecha_no_adjudicacion = :fecha_no_adjudicacion
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "motivo_no_adjudicacion_id": data["motivo_no_adjudicacion"],
+                "fecha_no_adjudicacion": datetime.now(),
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -674,11 +678,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_en_estudio = :comentario_en_estudio
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_en_estudio": data["comentario_en_estudio"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -705,6 +711,12 @@ class Querys:
             result = ""
             sql = """
                 select sph.fecha_programacion, sph.usuario, srl.nombre as resultado_seguimiento, ts.nombre as tipo_seguimiento, 
+                COALESCE(sph.comentario_en_estudio, '') as comentario_en_estudio,
+                COALESCE(sph.comentario_no_contesta, '') as comentario_no_contesta,
+                COALESCE(sph.comentario_llamar_mas_tarde, '') as comentario_llamar_mas_tarde,
+                COALESCE(sph.comentario_reprogramar_llamada, '') as comentario_reprogramar_llamada,
+                COALESCE(sph.comentario_no_confirmado, '') as comentario_no_confirmado,
+                COALESCE(sph.comentario_presentado_plataforma, '') as comentario_presentado_plataforma,
                 sph.contacto, sph.created_at as fecha_creacion
                 from seguimiento_programacion_historia sph
                 inner join seguimiento_resultado_llamada srl on srl.id = sph.resultado_seguimiento  
@@ -722,6 +734,13 @@ class Querys:
                     result += f"Fecha Programación: {key.fecha_programacion}\n"
                     result += f"Resultado Seguimiento: {key.resultado_seguimiento}\n"
                     result += f"Tipo Seguimiento: {key.tipo_seguimiento}\n"
+                    result += f"Comentario_en_estudio: {key.comentario_en_estudio}\n"
+                    result += f"Comentario_no_contesta: {key.comentario_no_contesta}\n"
+                    result += f"Comentario_llamar_mas_tarde: {key.comentario_llamar_mas_tarde}\n"
+                    result += f"Comentario_reprogramar_llamada: {key.comentario_reprogramar_llamada}\n"
+                    result += f"Comentario_no_confirmado: {key.comentario_no_confirmado}\n"
+                    result += f"Comentario_presentado_plataforma: {key.comentario_presentado_plataforma}\n"
+                    result += f"Contacto: {key.contacto}\n"
                     result += f"Fecha creacion: {str(key.fecha_creacion)}\n"
                     result += "-" * 70 + "\n"
 
@@ -795,11 +814,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_no_contesta = :comentario_no_contesta
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_no_contesta": data["comentario_no_contesta"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -836,11 +857,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_llamar_mas_tarde = :comentario_llamar_mas_tarde
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_llamar_mas_tarde": data["comentario_llamar_mas_tarde"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -877,11 +900,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_reprogramar_llamada = :comentario_reprogramar_llamada
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_reprogramar_llamada": data["comentario_reprogramar_llamada"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -918,11 +943,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_no_confirmado = :comentario_no_confirmado
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_no_confirmado": data["comentario_no_confirmado"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
@@ -959,11 +986,13 @@ class Querys:
             
             sql2 = """
                 UPDATE dbo.seguimiento_programacion_historia 
-                SET resultado_seguimiento = :resultado_seguimiento
+                SET resultado_seguimiento = :resultado_seguimiento,
+                comentario_presentado_plataforma = :comentario_presentado_plataforma
                 WHERE id = :id AND numero = :numero AND estado = 1;
             """
             self.db.execute(text(sql2), {
                 "resultado_seguimiento": data["resultado_llamada"],
+                "comentario_presentado_plataforma": data["comentario_presentado_plataforma"],
                 "id": data["id"],
                 "numero": data["numero"]
             })
