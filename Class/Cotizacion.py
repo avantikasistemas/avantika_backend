@@ -107,10 +107,27 @@ class Cotizacion:
             date = datetime.combine(date, START_WORK_HOUR)
         return date
 
+    # Helper para parsear fechas en múltiples formatos posibles
+    def parse_fecha(self, fecha_str: str) -> datetime:
+        formatos = [
+            "%d-%m-%Y %H:%M:%S",   # formato interno: 06-04-2026 10:30:00
+            "%Y-%m-%d %H:%M:%S",   # ISO con hora
+            "%Y-%m-%dT%H:%M:%S",   # ISO con T
+            "%Y-%m-%dT%H:%M",      # datetime-local del frontend
+            "%Y-%m-%d",            # date input del frontend: 2026-04-06
+            "%d-%m-%Y",            # solo fecha formato interno
+        ]
+        for fmt in formatos:
+            try:
+                return datetime.strptime(fecha_str, fmt)
+            except ValueError:
+                continue
+        raise ValueError(f"Formato de fecha no reconocido: '{fecha_str}'")
+
     # Función para calcular la oportunidad en la entrega
     def calculate_opportunity(self, fecha_entrega, fecha_vencimiento):
-        # Convertimos la fecha de vencimiento en tipo datetime para calcular 
-        fecha_vencimiento = datetime.strptime(fecha_vencimiento, "%d-%m-%Y %H:%M:%S")
+        # Convertimos la fecha de vencimiento en tipo datetime para calcular
+        fecha_vencimiento = self.parse_fecha(fecha_vencimiento)
         # Restamos la fecha de entrega menos vencimiento
         diff = fecha_entrega - fecha_vencimiento
         # Retornamos la diferencia
@@ -119,7 +136,7 @@ class Cotizacion:
     # función para calcular los días de entrega
     def calculate_delivery_days(self, fecha_entrega, fecha_hora_correo):
         # Convertimos la fecha del registro elegido en tipo datetime para calcular
-        fecha_entrada = datetime.strptime(fecha_hora_correo, "%d-%m-%Y %H:%M:%S")
+        fecha_entrada = self.parse_fecha(fecha_hora_correo)
         fecha_entrada = fecha_entrada.astimezone(
             pytz.timezone('America/Bogota')).replace(tzinfo=None)
         # Restamos la fecha de entrega menos vencimiento
@@ -133,7 +150,8 @@ class Cotizacion:
         # Asignamos los datos de entrada a variables 
         num_cot = data["numero_cotizacion"].strip()
         fecha_hora_correo = data.get("fecha", None)
-        fecha_vencimiento = data.get("fecha_vencimiento", None)
+        nueva_fecha_vencimiento = data.get("nueva_fecha_vencimiento", None)
+        fecha_vencimiento = nueva_fecha_vencimiento if nueva_fecha_vencimiento else data.get("fecha_vencimiento", None)
 
         # Inicializamos otras variables
         dias_oportunidad = 0
