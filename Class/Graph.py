@@ -69,12 +69,6 @@ class Graph:
                     # Obtener el estado del seguimiento
                     seguimiento = self.querys.check_follow_up(sender, subject, received_time)
 
-                    # Obtener el body y resolver imágenes embebidas (cid:)
-                    body_content = email.get('body', {}).get('content', '')
-                    message_id = email.get('id', '')
-                    if message_id and 'cid:' in body_content:
-                        body_content = self.replace_cid_images(message_id, body_content)
-
                     # Guardamos los datos en nuestra variable respuesta y la formateamos en json
                     response.append({
                         "id": i+1,
@@ -82,7 +76,7 @@ class Graph:
                         "asunto": subject,
                         "fecha_hora": received_time,
                         "seguimiento": seguimiento,
-                        "body": body_content,
+                        "body": email.get('body', {}).get('content', ''),
                     })
 
             # Retornamos la información.
@@ -103,7 +97,7 @@ class Graph:
         if start_date and end_date:
             filter_query = f"&$filter=receivedDateTime ge {start_date}T00:00:00Z and receivedDateTime le {end_date}T23:59:59Z"
 
-        url = f"{MICROSOFT_URL_GRAPH}{EMAIL_USER}/mailFolders/{folder_id}/messages?$top=100{filter_query}&$select=id,from,subject,receivedDateTime,bodyPreview,body"
+        url = f"{MICROSOFT_URL_GRAPH}{EMAIL_USER}/mailFolders/{folder_id}/messages?$top=100{filter_query}&$select=from,subject,receivedDateTime,bodyPreview,body"
         
         emails = []
         max_iterations = 100
@@ -137,26 +131,6 @@ class Graph:
                     return folder['id']
         print(f"No se encontró la carpeta {target_folder}.")
         return None
-
-    def replace_cid_images(self, message_id: str, body: str) -> str:
-        """Reemplaza referencias cid: del body del correo con data URIs base64."""
-        url = f"{MICROSOFT_URL_GRAPH}{EMAIL_USER}/messages/{message_id}/attachments"
-        data = self._make_request(url)
-        if not data:
-            return body
-
-        for attachment in data.get('value', []):
-            if not attachment.get('isInline', False):
-                continue
-            content_id = attachment.get('contentId', '').strip('<>')
-            content_type = attachment.get('contentType', 'image/png')
-            content_bytes = attachment.get('contentBytes', '')
-            if content_id and content_bytes:
-                body = body.replace(
-                    f'cid:{content_id}',
-                    f'data:{content_type};base64,{content_bytes}'
-                )
-        return body
 
     def _make_request(self, endpoint):
         """Realiza una petición GET a Microsoft Graph API."""
