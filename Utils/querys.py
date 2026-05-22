@@ -247,7 +247,8 @@ class Querys:
         response = list()
         try:
             sql = """
-                SELECT t.nit, t.nombres, tv.coordinador, tv.ejecutivo, dbo.terceros_16.descripcion AS 'tipo_cliente', dbo.terceros_2.descripcion AS 'zona'
+                SELECT t.nit, t.nombres, tv.coordinador, tv.ejecutivo, dbo.terceros_16.descripcion AS 'tipo_cliente', dbo.terceros_2.descripcion AS 'zona',
+                t.concepto_20
                 FROM   dbo.terceros AS t 
                 INNER JOIN dbo.terceros_ventas AS tv ON t.concepto_2 = tv.concepto_2 
                 INNER JOIN dbo.terceros_16 ON t.concepto_16 = dbo.terceros_16.concepto_16 
@@ -266,6 +267,7 @@ class Querys:
                         "ejecutivo": key.ejecutivo,
                         "tipo_cliente": key.tipo_cliente,
                         "zona": key.zona,
+                        "fan": True if key.concepto_20 == '200' else False
                     })
 
             return response
