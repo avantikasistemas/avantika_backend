@@ -37,7 +37,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener los datos del tercero por medio del nit
     def get_tercero_x_nit(self, nit: str):
@@ -78,7 +78,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
     
     # Query para obtener los tipos de estado para la cotizacion
     def get_tipos_estado(self):
@@ -100,7 +100,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
     
     # Query para obtener los datos de la cotizacion
     def consultar_cotizacion(self, num_cot):
@@ -153,7 +153,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener la información del seguimiento.
     def search_seguimiento(self, num_cot):
@@ -185,7 +185,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para buscar si la cotizacion existe
     def buscar_cotizacion(self, sender: str, subject: str, received_time: str):
@@ -206,7 +206,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para insertar datos de la cotizacion.
     def insert_datos_coti(self, data: dict):
@@ -217,7 +217,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
         return True
 
     # Query para actualizar los datos de la cotizacion.
@@ -237,7 +237,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
         return True
 
@@ -276,7 +276,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para revisar si la cotización existe en la base de datos.
     def check_if_cotizacion_exists(self, cotizacion: str):
@@ -328,7 +328,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para guardar el seguimiento de la cotización.
     def guardar_seguimiento(self, data: dict, data_segui_coti_id: int = None):
@@ -367,7 +367,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para guardar la historia del seguimiento de la cotización.
     def guardar_historia_seguimiento(self, data, segui_progra_id):
@@ -405,7 +405,7 @@ class Querys:
             print(traceback.format_exc())  
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
         return True
 
     # Query para obtener la historia del seguimiento de la cotización.
@@ -435,7 +435,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener los tipos de seguimiento.
     def tipo_seguimientos(self):
@@ -459,7 +459,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener los contactos de la cotización.            
     def get_contactos_cotizacion(self, nit: int):
@@ -479,7 +479,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener los tipos de resultado de llamada.
     def tipo_resultado_llamada(self):
@@ -503,7 +503,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para verificar si el seguimiento existe por ID y número.
     def check_seguimiento_id(self, data: dict):
@@ -519,7 +519,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para actualizar el resultado de la llamada.
     def actualizar_resultado_llamada(self, data: dict):
@@ -564,7 +564,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para verificar si el seguimiento de la cotización ya existe.
     def check_seguimiento_exists(self, cotizacion: str):
@@ -580,7 +580,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener los motivos de no adjudicación.
     def motivos_no_adjudicacion(self):
@@ -604,7 +604,7 @@ class Querys:
             print(str(ex))
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para guardar la información de no adjudicación.
     def guardar_no_adjudicacion(self, data: dict):
@@ -650,7 +650,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para obtener el resultado del seguimiento de la cotización.
     def get_data_seguimiento(self, cotizacion: str):
@@ -665,7 +665,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para buscar el historial de seguimiento de la cotización.
     def buscar_seguimiento_historial(self, num_cot):
@@ -704,7 +704,7 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para verificar si existe un correo asociado a la cotización.
     def check_seguimiento_coti_correo_exists(self, num_cot):
@@ -725,7 +725,7 @@ class Querys:
         except CustomException as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
 
     # Query para verificar si el seguimiento de la cotización ya existe.
     def check_seguimiento_exists_2(self, segui_coti_id: int, cotizacion: str):
@@ -748,4 +748,4 @@ class Querys:
         except Exception as ex:
             raise CustomException(str(ex))
         finally:
-            self.db.close()
+            self.db.rollback()
